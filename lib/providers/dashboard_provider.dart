@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
-import 'package:guardian_app/models/dashboard_data.dart';
-import 'package:guardian_app/services/guardian_repository.dart';
+import 'package:guardian_app/features/dashboard/data/models/dashboard_data.dart';
+import 'package:guardian_app/features/dashboard/data/repositories/dashboard_repository.dart';
 
 /// A provider for the dashboard screen.
 ///
 /// It handles the state for loading and displaying dashboard data.
 class DashboardProvider with ChangeNotifier, DiagnosticableTreeMixin {
-  final GuardianRepository _repository;
+  final DashboardRepository _repository;
 
   DashboardProvider(this._repository);
 

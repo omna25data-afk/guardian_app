@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'package:guardian_app/providers/dashboard_provider.dart';
-import 'package:guardian_app/models/dashboard_data.dart';
+import 'package:guardian_app/features/dashboard/data/models/dashboard_data.dart';
 import 'package:guardian_app/providers/record_book_provider.dart';
 import 'package:guardian_app/providers/registry_entry_provider.dart';
 

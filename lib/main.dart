@@ -3,20 +3,38 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:guardian_app/providers/dashboard_provider.dart';
 import 'package:guardian_app/providers/record_book_provider.dart';
 import 'package:guardian_app/providers/registry_entry_provider.dart';
+import 'package:guardian_app/features/auth/data/repositories/auth_repository.dart';
+import 'package:guardian_app/features/dashboard/data/repositories/dashboard_repository.dart';
+import 'package:guardian_app/features/records/data/repositories/records_repository.dart';
+import 'package:guardian_app/features/registry/data/repositories/registry_repository.dart';
 import 'package:guardian_app/screens/login_screen.dart';
-import 'package:guardian_app/services/guardian_repository.dart';
 import 'package:provider/provider.dart';
 
 void main() {
-  // Create a single instance of the repository
-  final guardianRepository = GuardianRepository();
+  // Create repositories
+  final authRepository = AuthRepository();
+  final dashboardRepository = DashboardRepository(authRepository: authRepository);
+  final recordsRepository = RecordsRepository(authRepository: authRepository);
+  final registryRepository = RegistryRepository(authRepository: authRepository);
 
-  runApp(MyApp(repository: guardianRepository));
+  runApp(MyApp(
+    dashboardRepository: dashboardRepository,
+    recordsRepository: recordsRepository,
+    registryRepository: registryRepository,
+  ));
 }
 
 class MyApp extends StatelessWidget {
-  final GuardianRepository repository;
-  const MyApp({super.key, required this.repository});
+  final DashboardRepository dashboardRepository;
+  final RecordsRepository recordsRepository;
+  final RegistryRepository registryRepository;
+
+  const MyApp({
+    super.key, 
+    required this.dashboardRepository,
+    required this.recordsRepository,
+    required this.registryRepository,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,15 +44,15 @@ class MyApp extends StatelessWidget {
       providers: [
         // Provide the DashboardProvider
         ChangeNotifierProvider(
-          create: (_) => DashboardProvider(repository),
+          create: (_) => DashboardProvider(dashboardRepository),
         ),
         // Provider for the list of record books
         ChangeNotifierProvider(
-          create: (_) => RecordBookProvider(repository),
+          create: (_) => RecordBookProvider(recordsRepository),
         ),
         // Provider for the list of registry entries
         ChangeNotifierProvider(
-          create: (_) => RegistryEntryProvider(repository),
+          create: (_) => RegistryEntryProvider(registryRepository),
         ),
       ],
       child: MaterialApp(

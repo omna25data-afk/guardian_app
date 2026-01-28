@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:guardian_app/models/registry_entry.dart';
-import 'package:guardian_app/services/guardian_repository.dart';
+import 'package:guardian_app/features/registry/data/models/registry_entry.dart';
+import 'package:guardian_app/features/registry/data/repositories/registry_repository.dart';
 
 /// A provider for managing the list of registry entries.
 class RegistryEntryProvider with ChangeNotifier {
-  final GuardianRepository _repository;
+  final RegistryRepository _repository;
 
   RegistryEntryProvider(this._repository);
 
