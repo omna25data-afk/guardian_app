@@ -177,7 +177,7 @@ class _MainTabState extends State<MainTab> {
     return Card(elevation: 1, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), child: Padding(padding: const EdgeInsets.all(8.0), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Text(value, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)), const SizedBox(height: 4), Text(label, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center)])));
   }
 
-  Widget _buildStatusCard(BuildContext context, String title, GuardianRenewalStatus status) {
+  Widget _buildStatusCard(BuildContext context, String title, RenewalStatus status) {
     return Card(elevation: 1, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: Theme.of(context).textTheme.titleMedium), const SizedBox(height: 4), Text('تنتهي في: ${status.expiryDate?.year}/${status.expiryDate?.month}/${status.expiryDate?.day}', style: Theme.of(context).textTheme.bodySmall)]), Row(children: [Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: status.color.withAlpha(30), borderRadius: BorderRadius.circular(20)), child: Text(status.label, style: TextStyle(color: status.color, fontWeight: FontWeight.bold))), const SizedBox(width: 8), const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey)])])));
   }
 }
@@ -274,8 +274,8 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: ListTile(
                   leading: Icon(Icons.description, color: entry.statusColor),
-                  title: Text('${entry.firstPartyName} - ${entry.secondPartyName}'),
-                  subtitle: Text('${entry.contractTypeName} - ${entry.documentHijriDate}'),
+                  title: Text('${entry.firstParty} - ${entry.secondParty}'),
+                  subtitle: Text('${entry.contractType} - ${entry.dateHijri}'),
                   trailing: Text(entry.statusLabel, style: TextStyle(color: entry.statusColor, fontWeight: FontWeight.bold)),
                 ),
               );

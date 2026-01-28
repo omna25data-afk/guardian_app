@@ -9,7 +9,7 @@ class DashboardRepository {
 
   DashboardRepository({required this.authRepository});
 
-  Future<DashboardData> getDashboardData() async {
+  Future<DashboardData> getDashboard() async {
     final token = await authRepository.getToken();
     final response = await http.get(
       Uri.parse(ApiConstants.dashboard),

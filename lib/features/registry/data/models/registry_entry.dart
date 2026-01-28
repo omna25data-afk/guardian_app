@@ -1,5 +1,8 @@
+import 'package:flutter/material.dart';
+
 class RegistryEntry {
   final int? id;
+  // ... existing fields ...
   final int? serialNumber;
   final String statusLabel; // Mapped from 'status_label'
   final String firstParty; // Mapped from 'first_party_name'
@@ -38,5 +41,11 @@ class RegistryEntry {
       dateGregorian: dates['gregorian'] ?? json['document_gregorian_date'] ?? '',
       totalFees: (fees['total'] ?? json['fee_amount'] ?? 0).toDouble(),
     );
+  }
+
+  Color get statusColor {
+    if (statusLabel.contains('مسودة') || statusLabel.contains('Draft')) return Colors.orange;
+    if (statusLabel.contains('معتمد') || statusLabel.contains('Approved')) return Colors.green;
+    return Colors.grey;
   }
 }
