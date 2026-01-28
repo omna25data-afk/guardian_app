@@ -63,25 +63,58 @@ class DashboardStats {
   }
 }
 
+import 'package:flutter/material.dart';
+
 class RenewalStatus {
   final String label;
-  final String color;
-  final String? expiryDate;
+  final String colorString;
+  final String? expiryDateString;
   final int? daysRemaining;
 
   RenewalStatus({
     required this.label,
-    required this.color,
-    this.expiryDate,
+    required this.colorString,
+    this.expiryDateString,
     this.daysRemaining,
   });
 
   factory RenewalStatus.fromJson(Map<String, dynamic> json) {
     return RenewalStatus(
       label: json['status_label'] ?? 'غير محدد',
-      color: json['status_color'] ?? 'gray',
-      expiryDate: json['expiry_date'],
+      colorString: json['status_color'] ?? 'gray',
+      expiryDateString: json['expiry_date'],
       daysRemaining: json['days_remaining'],
     );
+  }
+
+  // Parse color string to Color object
+  Color get color {
+    switch (colorString.toLowerCase()) {
+      case 'success':
+      case 'green':
+        return Colors.green;
+      case 'warning':
+      case 'yellow':
+      case 'orange':
+        return Colors.orange;
+      case 'danger':
+      case 'red':
+        return Colors.red;
+      case 'primary':
+      case 'blue':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Parse expiry date string to DateTime object
+  DateTime? get expiryDate {
+    if (expiryDateString == null) return null;
+    try {
+      return DateTime.parse(expiryDateString!);
+    } catch (_) {
+      return null;
+    }
   }
 }
