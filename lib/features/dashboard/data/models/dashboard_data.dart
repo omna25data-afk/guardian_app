@@ -1,4 +1,4 @@
-import '../../registry/data/models/registry_entry.dart';
+import '../../../registry/data/models/registry_entry.dart';
 
 class DashboardData {
   final String welcomeMessage;

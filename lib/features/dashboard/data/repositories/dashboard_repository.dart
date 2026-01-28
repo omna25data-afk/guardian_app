@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../../core/constants/api_constants.dart';
-import '../../auth/data/repositories/auth_repository.dart';
+import '../../../auth/data/repositories/auth_repository.dart';
 import '../models/dashboard_data.dart';
 
 class DashboardRepository {
