@@ -1,0 +1,9 @@
+# Flutter specific
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.dart_tool/
+build/
+
+# Documentation
+API_DOCUMENTATION.md
