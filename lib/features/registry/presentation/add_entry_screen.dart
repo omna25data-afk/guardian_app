@@ -691,7 +691,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                 IconButton(
                   icon: const Icon(Icons.add_circle, color: Color(0xFF006400)),
                   onPressed: () {
-                    // TODO: Implement repeater logic
+                    // Repeater feature - will be implemented in future version
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('سيتم إضافة هذه الميزة قريباً')),
                     );
