@@ -18,4 +18,5 @@ class ApiConstants {
   static const String profile = "$baseUrl/profile";
   static const String contractTypes = "$baseUrl/contract-types";
   static String myRecordBook(int contractTypeId) => "$baseUrl/my-record-books/$contractTypeId";
+  static String formFields(int contractTypeId) => "$baseUrl/form-fields/$contractTypeId";
 }

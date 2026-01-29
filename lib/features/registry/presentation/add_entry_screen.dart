@@ -27,6 +27,8 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   int? _selectedContractTypeId;
   Map<String, dynamic>? _selectedContractType;
   Map<String, dynamic>? _recordBookInfo;
+  List<Map<String, dynamic>> _dynamicFields = [];  // Fields from FormFieldConfig
+  bool _isLoadingFields = false;
   
   // Section 1: Document dates
   DateTime _documentDateGregorian = DateTime.now();
@@ -150,20 +152,79 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
         (ct) => ct['id'] == contractTypeId,
         orElse: () => {},
       );
+      _dynamicFields = [];
     });
     
-    // Initialize controllers for dynamic fields
-    final formSchema = _selectedContractType?['form_schema'] as List<dynamic>? ?? [];
-    for (var field in formSchema) {
-      final fieldName = field['name'] as String;
-      final fieldType = field['type'] as String;
-      if (fieldType == 'text' || fieldType == 'textarea' || fieldType == 'number') {
-        _textControllers[fieldName] = TextEditingController();
-      }
-    }
+    // Load form fields from FormFieldConfig API
+    _loadFormFields(contractTypeId);
     
     // Load record book info
     _loadRecordBookInfo(contractTypeId);
+  }
+
+  Future<void> _loadFormFields(int contractTypeId) async {
+    setState(() => _isLoadingFields = true);
+    
+    try {
+      final authRepo = Provider.of<AuthRepository>(context, listen: false);
+      final token = await authRepo.getToken();
+      
+      final response = await http.get(
+        Uri.parse(ApiConstants.formFields(contractTypeId)),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+          'X-Auth-Token': token ?? '',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        final fields = List<Map<String, dynamic>>.from(data['fields'] ?? []);
+        
+        // Initialize controllers for text fields
+        for (var field in fields) {
+          final fieldName = field['name'] as String;
+          final fieldType = field['type'] as String;
+          if (fieldType == 'text' || fieldType == 'textarea' || fieldType == 'number') {
+            _textControllers[fieldName] = TextEditingController();
+          }
+        }
+        
+        setState(() {
+          _dynamicFields = fields;
+          _isLoadingFields = false;
+        });
+      } else {
+        // Fallback to form_schema from contract type if FormFieldConfig not found
+        final formSchema = _selectedContractType?['form_schema'] as List<dynamic>? ?? [];
+        for (var field in formSchema) {
+          final fieldName = field['name'] as String;
+          final fieldType = field['type'] as String;
+          if (fieldType == 'text' || fieldType == 'textarea' || fieldType == 'number') {
+            _textControllers[fieldName] = TextEditingController();
+          }
+        }
+        setState(() {
+          _dynamicFields = formSchema.map((f) => Map<String, dynamic>.from(f)).toList();
+          _isLoadingFields = false;
+        });
+      }
+    } catch (e) {
+      // Fallback to form_schema
+      final formSchema = _selectedContractType?['form_schema'] as List<dynamic>? ?? [];
+      for (var field in formSchema) {
+        final fieldName = field['name'] as String;
+        final fieldType = field['type'] as String;
+        if (fieldType == 'text' || fieldType == 'textarea' || fieldType == 'number') {
+          _textControllers[fieldName] = TextEditingController();
+        }
+      }
+      setState(() {
+        _dynamicFields = formSchema.map((f) => Map<String, dynamic>.from(f)).toList();
+        _isLoadingFields = false;
+      });
+    }
   }
 
   Future<void> _pickDeliveryReceiptImage() async {
@@ -496,10 +557,27 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   }
 
   List<Widget> _buildDynamicFormFields() {
-    final formSchema = _selectedContractType?['form_schema'] as List<dynamic>? ?? [];
+    // Show loading indicator while fetching fields
+    if (_isLoadingFields) {
+      return [const Center(child: CircularProgressIndicator())];
+    }
+    
+    if (_dynamicFields.isEmpty) {
+      return [
+        Container(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            'لا توجد حقول مخصصة لهذا النوع من العقود',
+            style: GoogleFonts.tajawal(color: Colors.grey[600]),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ];
+    }
+    
     final List<Widget> fields = [];
     
-    for (var field in formSchema) {
+    for (var field in _dynamicFields) {
       final fieldName = field['name'] as String;
       final fieldLabel = field['label'] as String;
       final fieldType = field['type'] as String;
