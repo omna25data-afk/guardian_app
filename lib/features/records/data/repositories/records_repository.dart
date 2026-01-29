@@ -16,6 +16,7 @@ class RecordsRepository {
       headers: {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
+        'X-Auth-Token': token!, // Fallback header
       },
     );
 

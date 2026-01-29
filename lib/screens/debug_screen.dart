@@ -57,6 +57,7 @@ class _DebugScreenState extends State<DebugScreen> {
         Uri.parse(ApiConstants.recordBooks),
         headers: {
           'Authorization': 'Bearer $token',
+          'X-Auth-Token': token,
           'Accept': 'application/json',
         },
       );
