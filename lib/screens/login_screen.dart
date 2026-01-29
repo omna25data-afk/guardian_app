@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:guardian_app/core/constants/api_constants.dart';
 import 'package:guardian_app/screens/home_screen.dart';
+import 'package:guardian_app/screens/debug_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -205,10 +206,25 @@ class _LoginScreenState extends State<LoginScreen> {
                         : Text('تسجيل الدخول', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
+          // Debug Button
+          Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: TextButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DebugScreen()),
+                );
+              },
+              icon: const Icon(Icons.bug_report, color: Colors.grey),
+              label: const Text("فحص الاتصال (Debug)", style: TextStyle(color: Colors.grey)),
+            ),
+          ),
+        ],
       ),
     );
   }
