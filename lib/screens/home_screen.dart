@@ -226,7 +226,7 @@ class _MainTabState extends State<MainTab> {
   Widget _buildWelcomeCard(BuildContext context, DashboardData dashboard) {
     return Card(
       elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.1),
+      shadowColor: Colors.black.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -320,7 +320,7 @@ class _MainTabState extends State<MainTab> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                            color: status.color.withOpacity(0.1),
+                            color: status.color.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20)),
                         child: Text(status.label,
                             style: TextStyle(
