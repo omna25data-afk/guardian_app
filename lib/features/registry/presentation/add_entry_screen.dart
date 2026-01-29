@@ -340,7 +340,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                       children: [
                         // نوع العقد
                         DropdownButtonFormField<int>(
-                          value: _selectedContractTypeId,
+                          initialValue: _selectedContractTypeId,
                           decoration: InputDecoration(
                             labelText: 'نوع العقد *',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -630,7 +630,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
           
         case 'select':
           fieldWidget = DropdownButtonFormField<String>(
-            value: _formData[fieldName] as String?,
+            initialValue: _formData[fieldName] as String?,
             decoration: InputDecoration(
               labelText: '$fieldLabel${isRequired ? " *" : ""}',
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
