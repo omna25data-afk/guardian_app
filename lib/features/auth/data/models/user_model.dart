@@ -37,8 +37,8 @@ class User {
       name: userData['name'],
       phoneNumber: userData['phone_number'] ?? '', // Map from phone_number
       token: json['access_token'] ?? json['token'],
-      isGuardian: (userData['roles'] as List?)?.contains('legitimate_guardian') ?? false,
-      roles: (userData['roles'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      isGuardian: (userData['role_names'] as List?)?.contains('legitimate_guardian') ?? false,
+      roles: (userData['role_names'] as List?)?.map((e) => e.toString()).toList() ?? [],
       // Guardian profile
       guardianId: guardianData?['id'],
       guardianFullName: guardianData?['full_name'],
