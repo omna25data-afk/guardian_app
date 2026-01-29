@@ -24,7 +24,22 @@ class AdminDashboardRepository {
       final json = jsonDecode(response.body);
       return AdminDashboardData.fromJson(json);
     } else {
-      throw Exception('Failed to load admin dashboard: ${response.statusCode}');
+      String errorMessage = 'Failed to load admin dashboard: ${response.statusCode}';
+      try {
+        final errorJson = jsonDecode(response.body);
+        if (errorJson['message'] != null) {
+          errorMessage += '\n${errorJson['message']}';
+        }
+        if (errorJson['file'] != null) {
+          errorMessage += '\nFile: ${errorJson['file']}';
+        }
+        if (errorJson['line'] != null) {
+          errorMessage += '\nLine: ${errorJson['line']}';
+        }
+      } catch (_) {
+        // use generic message if parsing fails
+      }
+      throw Exception(errorMessage);
     }
   }
 }
