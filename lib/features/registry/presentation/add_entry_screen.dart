@@ -227,7 +227,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                     _buildSectionHeader('بيانات القيد'),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<int>(
-                      value: _selectedContractTypeId,
+                      initialValue: _selectedContractTypeId,
                       decoration: InputDecoration(
                         labelText: 'نوع العقد',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
