@@ -441,25 +441,12 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
           'X-Auth-Token': token ?? '',
         },
         body: jsonEncode({
-          'record_book_id': _recordBookInfo!['id'], // We still need the ID, assuming it doesn't change or we look it up? 
-          // User asked to edit Entry/Page/Book numbers. Backend usually validates this.
-          // We should send these values if the backend accepts them override.
-          // Assuming backend expects them in 'form_data' or specific fields? 
-          // Default backend usually auto-increments. If we want to override, we might need specific params.
-          // For now, let's send them as separate params if the API supports it, or just rely on the fact they are editable for the USER's record keeping.
-          // The API request in original code sent:
-          /*
-            'record_book_id': _recordBookInfo!['id'],
-            'contract_type_id': _selectedContractTypeId,
-            ...
-          */
-          // If the backend allows overriding entry_number, we should send it.
-          // Let's assume we pass them as additional fields.
+          'record_book_id': _recordBookInfo!['id'],
           'contract_type_id': _selectedContractTypeId,
           'subtype_1': _selectedSubtype1,
           'subtype_2': _selectedSubtype2,
           'document_date_gregorian': _documentDateGregorian.toIso8601String().split('T')[0],
-          'document_date_hijri': _documentDateHijri.toString(), // Use stored Hijri object toString
+          'document_date_hijri': _documentDateHijri.toString(),
           'manual_book_number': _bookNumberController.text,
           'manual_page_number': _pageNumberController.text,
           'manual_entry_number': _entryNumberController.text,
@@ -468,7 +455,6 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
           'delivery_date': _deliveryStatus == 'delivered' 
               ? _deliveryDate?.toIso8601String().split('T')[0] 
               : null,
-          // Note: Image upload would need multipart request in production
         }),
       );
       
@@ -480,40 +466,29 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          // Clear form
-          // Handle Sequential Mode or Reset
+          
           if (_isSequentialMode) {
-            // Keep Date, Type, Book. Increment Entry Number.
-            _formKey.currentState!.reset(); // Resets validators
-             // Keep text controllers that we want to preserve? No, clear parties.
-             // We only want to increment entry Number.
-             int currentEntry = int.tryParse(_entryNumberController.text) ?? 0;
-             
-            for (var entry in _textControllers.entries) {
-               // Logic to detect which fields to clear? 
-               // For now clear all dynamic text fields
-               entry.value.clear();
-            }
-            // Restore Manual Numbers (Entry++)
-            _entryNumberController.text = (currentEntry + 1).toString();
-            // Page number remains same? Or increments? Usually same until full. Keep it.
-            // _pageNumberController.text remains same.
+            int currentEntry = int.tryParse(_entryNumberController.text) ?? 0;
+            _formKey.currentState!.reset(); 
             
-             setState(() {
-               // Keep contract type and book info
-               _formData.clear();
-               _deliveryReceiptImage = null;
-                // Show specific message
-               ScaffoldMessenger.of(context).showSnackBar(
+            for (var controller in _textControllers.values) {
+              controller.clear();
+            }
+            
+            _entryNumberController.text = (currentEntry + 1).toString();
+            
+            setState(() {
+              _formData.clear();
+              _deliveryReceiptImage = null;
+              ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('تم الحفظ بنجاح. جاهز للقيد التالي رقم ${_entryNumberController.text}'),
                   backgroundColor: Colors.blue[700],
                   duration: const Duration(seconds: 2),
                 ),
               );
-             });
+            });
           } else {
-             // Normal Reset
             _formKey.currentState!.reset();
             for (var controller in _textControllers.values) {
               controller.clear();
@@ -526,7 +501,6 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
               _deliveryReceiptImage = null;
             });
           }
-          });
         }
       } else {
         final error = jsonDecode(response.body);
@@ -560,12 +534,10 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // ========== القسم الأول: بيانات الوثيقة ==========
                     _buildSectionCard(
                       title: 'القسم الأول: بيانات الوثيقة',
                       icon: Icons.description,
                       children: [
-                        // نوع العقد
                         DropdownButtonFormField<int>(
                           initialValue: _selectedContractTypeId,
                           decoration: InputDecoration(
@@ -573,13 +545,14 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                             prefixIcon: const Icon(Icons.category),
                           ),
+                          items: _contractTypes.map((ct) {
                             return DropdownMenuItem<int>(
                               value: ct['id'],
                               child: Row(
                                 children: [
-                                   Icon(_getContractIcon(ct['name']), color: const Color(0xFF006400).withValues(alpha: 0.8), size: 18),
+                                   Icon(_getContractIcon(ct['name'] ?? ''), color: const Color(0xFF006400).withValues(alpha: 0.8), size: 18),
                                    const SizedBox(width: 8),
-                                   Text(ct['name']),
+                                   Text(ct['name'] ?? ''),
                                 ],
                               ),
                             );

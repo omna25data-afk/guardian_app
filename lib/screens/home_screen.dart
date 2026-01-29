@@ -283,7 +283,7 @@ class _RecordBooksListState extends State<RecordBooksList> {
                           _selectedCategory = null; // Reset selection when switching modes
                         });
                       },
-                      activeColor: Colors.amber[900],
+                      activeThumbColor: Colors.amber[900],
                       inactiveThumbColor: const Color(0xFF006400),
                       inactiveTrackColor: const Color(0xFF006400).withAlpha(50),
                     ),
