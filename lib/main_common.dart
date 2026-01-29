@@ -11,6 +11,8 @@ import 'package:guardian_app/features/dashboard/data/repositories/dashboard_repo
 import 'package:guardian_app/features/records/data/repositories/records_repository.dart';
 import 'package:guardian_app/features/registry/data/repositories/registry_repository.dart';
 import 'package:guardian_app/screens/login_screen.dart';
+import 'package:guardian_app/features/admin/data/repositories/admin_dashboard_repository.dart';
+import 'package:guardian_app/providers/admin_dashboard_provider.dart';
 import 'package:provider/provider.dart';
 
 void mainCommon(AppConfig config) {
@@ -21,14 +23,18 @@ void mainCommon(AppConfig config) {
   final authRepository = AuthRepository();
   final dashboardRepository = DashboardRepository(authRepository: authRepository);
   final recordsRepository = RecordsRepository(authRepository: authRepository);
+  final recordsRepository = RecordsRepository(authRepository: authRepository);
   final registryRepository = RegistryRepository(authRepository: authRepository);
+  final adminDashboardRepository = AdminDashboardRepository(authRepository);
 
   runApp(MyApp(
     config: config,
     authRepository: authRepository,
     dashboardRepository: dashboardRepository,
     recordsRepository: recordsRepository,
+    recordsRepository: recordsRepository,
     registryRepository: registryRepository,
+    adminDashboardRepository: adminDashboardRepository,
   ));
 }
 
@@ -37,7 +43,9 @@ class MyApp extends StatelessWidget {
   final AuthRepository authRepository;
   final DashboardRepository dashboardRepository;
   final RecordsRepository recordsRepository;
+  final RecordsRepository recordsRepository;
   final RegistryRepository registryRepository;
+  final AdminDashboardRepository adminDashboardRepository;
 
   const MyApp({
     super.key, 
@@ -45,7 +53,9 @@ class MyApp extends StatelessWidget {
     required this.authRepository,
     required this.dashboardRepository,
     required this.recordsRepository,
+    required this.recordsRepository,
     required this.registryRepository,
+    required this.adminDashboardRepository,
   });
 
   @override
@@ -67,6 +77,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => RegistryEntryProvider(registryRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => AdminDashboardProvider(adminDashboardRepository),
         ),
       ],
       child: MaterialApp(

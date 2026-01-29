@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:guardian_app/features/admin/data/models/admin_dashboard_data.dart';
+import 'package:guardian_app/providers/admin_dashboard_provider.dart';
+import 'package:provider/provider.dart';
 
 class AdminDashboardTab extends StatefulWidget {
   const AdminDashboardTab({super.key});
@@ -15,6 +18,11 @@ class _AdminDashboardTabState extends State<AdminDashboardTab> with SingleTicker
   void initState() {
     super.initState();
     _guardianStatsController = TabController(length: 3, vsync: this);
+    
+    // Fetch data on init
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AdminDashboardProvider>(context, listen: false).fetchDashboard();
+    });
   }
 
   @override
@@ -25,88 +33,123 @@ class _AdminDashboardTabState extends State<AdminDashboardTab> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.grey[50], // Light background
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // 1. Welcome / Summary Header
-          _buildSectionHeader('ملخص النظام', Icons.analytics),
-          const SizedBox(height: 12),
-          _buildSummaryCards(),
-          
-          const SizedBox(height: 24),
-          
-          // 2. Urgent Actions
-          _buildSectionHeader('الإجراءات العاجلة ⚠️', Icons.notification_important, color: Colors.red),
-          _buildUrgentActionsList(),
+    return Consumer<AdminDashboardProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-          const SizedBox(height: 24),
-
-          // 3. Guardians Data Section (Tabs for Grid)
-          _buildSectionHeader('بيانات الأمناء والتراخيص', Icons.people),
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
+        if (provider.error != null) {
+          return Center(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                TabBar(
-                  controller: _guardianStatsController,
-                  labelColor: const Color(0xFF006400),
-                  unselectedLabelColor: Colors.grey,
-                  labelStyle: GoogleFonts.tajawal(fontWeight: FontWeight.bold),
-                  indicatorColor: const Color(0xFF006400),
-                  tabs: const [
-                    Tab(text: 'الأمناء'),
-                    Tab(text: 'التراخيص'),
-                    Tab(text: 'البطائق'),
-                  ],
-                ),
-                SizedBox(
-                  height: 280, // Fixed height for Grid View
-                  child: TabBarView(
-                    controller: _guardianStatsController,
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                Text('حدث خطأ أثناء تحميل البيانات', style: GoogleFonts.tajawal()),
+                Text(provider.error!, style: GoogleFonts.tajawal(fontSize: 12, color: Colors.grey)),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => provider.fetchDashboard(),
+                  child: Text('إعادة المحاولة', style: GoogleFonts.tajawal()),
+                )
+              ],
+            ),
+          );
+        }
+
+        final data = provider.data;
+        if (data == null) {
+          return const Center(child: Text('لا توجد بيانات'));
+        }
+
+        return RefreshIndicator(
+          onRefresh: () => provider.fetchDashboard(),
+          child: Container(
+            color: Colors.grey[50],
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // 1. Welcome
+                _buildSectionHeader('ملخص النظام', Icons.analytics),
+                const SizedBox(height: 12),
+                _buildSummaryCards(),
+                
+                const SizedBox(height: 24),
+                
+                // 2. Urgent Actions
+                _buildSectionHeader('الإجراءات العاجلة ⚠️', Icons.notification_important, color: Colors.red),
+                _buildUrgentActionsList(data.urgentActions),
+
+                const SizedBox(height: 24),
+
+                // 3. Guardians Data
+                _buildSectionHeader('بيانات الأمناء والتراخيص', Icons.people),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
                     children: [
-                      // A. Guardians Stats
-                      _buildGridStats([
-                        _StatItem('إجمالي الأمناء', '150', Colors.blue, Icons.group),
-                        _StatItem('على رأس العمل', '120', Colors.green, Icons.work),
-                        _StatItem('موقوفين مؤقتاً', '5', Colors.orange, Icons.pause_circle),
-                        _StatItem('متواري / غائب', '25', Colors.red, Icons.cancel),
-                      ]),
-                      // B. Licenses Stats
-                      _buildGridStats([
-                        _StatItem('إجمالي التراخيص', '150', Colors.indigo, Icons.card_membership),
-                        _StatItem('تراخيص سارية', '100', Colors.green, Icons.check_circle),
-                        _StatItem('تنتهي قريباً', '15', Colors.amber, Icons.warning),
-                        _StatItem('منتهية', '35', Colors.red, Icons.error),
-                      ]),
-                      // C. Cards Stats
-                      _buildGridStats([
-                        _StatItem('إجمالي البطائق', '150', Colors.teal, Icons.badge),
-                        _StatItem('بطائق سارية', '110', Colors.green, Icons.check_circle),
-                        _StatItem('تنتهي قريباً', '10', Colors.amber, Icons.warning),
-                        _StatItem('منتهية', '30', Colors.red, Icons.error),
-                      ]),
+                      TabBar(
+                        controller: _guardianStatsController,
+                        labelColor: const Color(0xFF006400),
+                        unselectedLabelColor: Colors.grey,
+                        labelStyle: GoogleFonts.tajawal(fontWeight: FontWeight.bold),
+                        indicatorColor: const Color(0xFF006400),
+                        tabs: const [
+                          Tab(text: 'الأمناء'),
+                          Tab(text: 'التراخيص'),
+                          Tab(text: 'البطائق'),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 280,
+                        child: TabBarView(
+                          controller: _guardianStatsController,
+                          children: [
+                            // A. Guardians
+                            _buildGridStats([
+                              _StatItem('إجمالي الأمناء', data.stats.guardians.total.toString(), Colors.blue, Icons.group),
+                              _StatItem('على رأس العمل', data.stats.guardians.active.toString(), Colors.green, Icons.work),
+                              _StatItem('متوقف عن العمل', data.stats.guardians.inactive.toString(), Colors.red, Icons.cancel),
+                              _StatItem('غير ذلك', '0', Colors.orange, Icons.help_outline),
+                            ]),
+                            // B. Licenses
+                            _buildGridStats([
+                              _StatItem('إجمالي التراخيص', data.stats.licenses.total.toString(), Colors.indigo, Icons.card_membership),
+                              _StatItem('سارية', data.stats.licenses.active.toString(), Colors.green, Icons.check_circle),
+                              _StatItem('تنتهي قريباً', data.stats.licenses.warning.toString(), Colors.amber, Icons.warning),
+                              _StatItem('منتهية', data.stats.licenses.inactive.toString(), Colors.red, Icons.error),
+                            ]),
+                            // C. Cards
+                            _buildGridStats([
+                              _StatItem('إجمالي البطائق', data.stats.cards.total.toString(), Colors.teal, Icons.badge),
+                              _StatItem('سارية', data.stats.cards.active.toString(), Colors.green, Icons.check_circle),
+                              _StatItem('تنتهي قريباً', data.stats.cards.warning.toString(), Colors.amber, Icons.warning),
+                              _StatItem('منتهية', data.stats.cards.inactive.toString(), Colors.red, Icons.error),
+                            ]),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
+
+                const SizedBox(height: 24),
+
+                // 4. Logs
+                _buildSectionHeader('آخر العمليات (Logs)', Icons.history),
+                const SizedBox(height: 8),
+                _buildLogsTab(), // Placeholder for now
               ],
             ),
           ),
-
-          const SizedBox(height: 24),
-
-          // 4. Logs Sections
-          _buildSectionHeader('آخر العمليات (Logs)', Icons.history),
-          const SizedBox(height: 8),
-          _buildLogsTab(),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -143,48 +186,47 @@ class _AdminDashboardTabState extends State<AdminDashboardTab> with SingleTicker
     );
   }
 
-  Widget _buildUrgentActionsList() {
-    return Card(
-      elevation: 0,
-      color: Colors.red.withAlpha(20), // Light red bg
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side:BorderSide(color: Colors.red.withAlpha(50))),
-      child: Column(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.warning_amber, color: Colors.red),
-            title: Text('تجديد ترخيص - الأمين محمد علي', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
-            subtitle: Text('ينتهي خلال 3 أيام', style: GoogleFonts.tajawal(color: Colors.red)),
-            trailing: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.red,
-                elevation: 0,
-                side: const BorderSide(color: Colors.red),
-                padding: const EdgeInsets.symmetric(horizontal: 12)
-              ),
-              child: Text('تجديد', style: GoogleFonts.tajawal()),
-            ),
+  Widget _buildUrgentActionsList(List<UrgentAction> actions) {
+    if (actions.isEmpty) {
+      return Card(
+        elevation: 0,
+        color: Colors.green.withAlpha(20),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.green),
+              const SizedBox(width: 8),
+              Text('لا توجد إجراءات عاجلة', style: GoogleFonts.tajawal(color: Colors.green[800])),
+            ],
           ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.warning_amber, color: Colors.orange),
-            title: Text('اعتماد عقد زواج معلق', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
-            subtitle: Text('تاريخ الرفع: 2026-01-29', style: GoogleFonts.tajawal()),
-             trailing: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.orange,
-                elevation: 0,
-                side: const BorderSide(color: Colors.orange),
-                padding: const EdgeInsets.symmetric(horizontal: 12)
-              ),
-              child: Text('عرض', style: GoogleFonts.tajawal()),
+        ),
+      );
+    }
+
+    return Column(
+      children: actions.map((action) => Card(
+        elevation: 0,
+        color: action.color.withAlpha(20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side:BorderSide(color: action.color.withAlpha(50))),
+        margin: const EdgeInsets.only(bottom: 8),
+        child: ListTile(
+          leading: Icon(Icons.warning_amber, color: action.color),
+          title: Text(action.title, style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(action.subtitle, style: GoogleFonts.tajawal(color: action.color)),
+          trailing: ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: action.color,
+              elevation: 0,
+              side: BorderSide(color: action.color),
+              padding: const EdgeInsets.symmetric(horizontal: 12)
             ),
+            child: Text(action.actionLabel, style: GoogleFonts.tajawal()),
           ),
-        ],
-      ),
+        ),
+      )).toList(),
     );
   }
 
@@ -247,8 +289,8 @@ class _AdminDashboardTabState extends State<AdminDashboardTab> with SingleTicker
              height: 200,
              child: TabBarView(
                children: [
-                 ListView(children: const [ListTile(title: Text('تم تسجيل الدخول'), leading: Icon(Icons.login))]),
-                 ListView(children: const [ListTile(title: Text('الأمين x أضاف عقداً'), leading: Icon(Icons.add_circle))]),
+                 ListView(children: const [ListTile(title: Text('بيانات تجريبية'), leading: Icon(Icons.info))]),
+                 ListView(children: const [ListTile(title: Text('لا توجد سجلات حالياً'), leading: Icon(Icons.history))]),
                ],
              ),
            )
