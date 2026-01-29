@@ -206,8 +206,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         : Text('تسجيل الدخول', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 ),
-                ],
-              ),
+              ],
+            ),
             ),
           ),
           // Debug Button

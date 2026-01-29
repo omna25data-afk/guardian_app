@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:guardian_mobile_app/core/constants/api_constants.dart';
+import 'package:guardian_app/core/constants/api_constants.dart';
 import 'dart:convert';
 
 class DebugScreen extends StatefulWidget {
@@ -39,7 +39,7 @@ class _DebugScreenState extends State<DebugScreen> {
 
       // Test 1: User Endpoint
       _addLog("--- Testing /user ---");
-      final userUrl = Uri.parse(ApiConstants.user); // Assuming this exists or construct it
+      // Test 1: User Endpoint
       final userResponse = await http.get(
         Uri.parse('${ApiConstants.baseUrl}/user'),
         headers: {
@@ -54,7 +54,7 @@ class _DebugScreenState extends State<DebugScreen> {
       // Test 2: Record Books Endpoint
       _addLog("--- Testing /record-books ---");
       final booksResponse = await http.get(
-        ApiConstants.recordBooks,
+        Uri.parse(ApiConstants.recordBooks),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
