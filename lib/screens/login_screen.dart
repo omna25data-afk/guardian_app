@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:guardian_app/core/constants/api_constants.dart';
 import 'package:guardian_app/screens/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -28,7 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final url = Uri.parse('https://darkturquoise-lark-306795.hostingersite.com/api/login');
+      final url = Uri.parse(ApiConstants.login);
       
       final response = await http.post(
         url,
@@ -52,9 +53,9 @@ class _LoginScreenState extends State<LoginScreen> {
            final isGuardian = user['is_guardian'] == true;
            
            if (isGuardian) {
-             final prefs = await SharedPreferences.getInstance();
-             await prefs.setString('token', data['token'] ?? data['access_token']);
-             await prefs.setString('user_data', jsonEncode(user));
+             const storage = FlutterSecureStorage();
+             await storage.write(key: 'auth_token', value: data['token'] ?? data['access_token']);
+             await storage.write(key: 'user_data', value: jsonEncode(user));
 
              if (!mounted) return;
 
