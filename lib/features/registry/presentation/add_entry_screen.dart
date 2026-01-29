@@ -65,14 +65,14 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     String d = date.day.toString().padLeft(2, '0');
     String m = date.month.toString().padLeft(2, '0');
     String y = date.year.toString();
-    return '$d/$m/${y}م'; // Right-to-Left format with English digits + Suffix
+    return '$d/$m/$yم'; // Right-to-Left format with English digits + Suffix
   }
 
   String _formatHijriDate(HijriCalendar date) {
     String d = date.hDay.toString().padLeft(2, '0');
     String m = date.hMonth.toString().padLeft(2, '0');
     String y = date.hYear.toString();
-    return '$d/$m/${y}هـ'; // Right-to-Left format with English digits + Suffix
+    return '$d/$m/$yهـ'; // Right-to-Left format with English digits + Suffix
   }
 
   IconData _getContractIcon(String typeName) {
