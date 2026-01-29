@@ -206,25 +206,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         : Text('تسجيل الدخول', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 ),
+                const SizedBox(height: 24),
+                // Debug Button
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const DebugScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.bug_report, color: Colors.grey),
+                  label: const Text("فحص الاتصال (Debug)", style: TextStyle(color: Colors.grey)),
+                ),
               ],
             ),
-            ),
           ),
-          // Debug Button
-          Padding(
-            padding: const EdgeInsets.only(bottom: 20),
-            child: TextButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const DebugScreen()),
-                );
-              },
-              icon: const Icon(Icons.bug_report, color: Colors.grey),
-              label: const Text("فحص الاتصال (Debug)", style: TextStyle(color: Colors.grey)),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
