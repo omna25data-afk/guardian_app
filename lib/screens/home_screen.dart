@@ -223,6 +223,9 @@ class RecordBooksList extends StatefulWidget {
 }
 
 class _RecordBooksListState extends State<RecordBooksList> {
+  String? _selectedCategory;
+  bool _showArchive = false;
+
   @override
   void initState() {
     super.initState();
@@ -241,24 +244,217 @@ class _RecordBooksListState extends State<RecordBooksList> {
         if (provider.errorMessage != null) {
           return Center(child: Text(provider.errorMessage!));
         }
-        return RefreshIndicator(
-          onRefresh: () => provider.fetchRecordBooks(),
-          child: ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: provider.recordBooks.length,
-            itemBuilder: (context, index) {
-              final book = provider.recordBooks[index];
-              return _buildRecordBookCard(book);
-            },
-          ),
+
+        // Filter based on Archive Mode and Category
+        final allBooks = provider.recordBooks;
+        
+        // 1. Filter by Active/Archive
+        final filteredBooks = allBooks.where((b) => _showArchive ? !b.isActive : b.isActive).toList();
+
+        // 2. Group by Category
+        final categories = <String, int>{};
+        for (var book in filteredBooks) {
+          categories[book.categoryLabel] = (categories[book.categoryLabel] ?? 0) + 1;
+        }
+
+        return Column(
+          children: [
+             // Archive Toggle Bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: Colors.grey[50],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _showArchive ? '🗄️ الأرشيف (السجلات السابقة)' : '📂 السجلات النشطة (الحالية)',
+                    style: GoogleFonts.tajawal(
+                      fontWeight: FontWeight.bold,
+                      color: _showArchive ? Colors.amber[900] : const Color(0xFF006400),
+                    ),
+                  ),
+                  Transform.scale(
+                    scale: 0.8,
+                    child: Switch(
+                      value: _showArchive,
+                      onChanged: (val) {
+                        setState(() {
+                          _showArchive = val;
+                          _selectedCategory = null; // Reset selection when switching modes
+                        });
+                      },
+                      activeColor: Colors.amber[900],
+                      inactiveThumbColor: const Color(0xFF006400),
+                      inactiveTrackColor: const Color(0xFF006400).withAlpha(50),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Breadcrumb if category selected
+            if (_selectedCategory != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                color: Colors.white,
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, size: 20),
+                      onPressed: () => setState(() => _selectedCategory = null),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _selectedCategory!,
+                      style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+
+            // Main Content
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () => provider.fetchRecordBooks(),
+                child: _selectedCategory == null
+                    ? _buildCategoriesGrid(categories)
+                    : _buildBooksList(filteredBooks.where((b) => b.categoryLabel == _selectedCategory).toList()),
+              ),
+            ),
+          ],
         );
       },
     );
   }
 
+  Widget _buildCategoriesGrid(Map<String, int> categories) {
+    if (categories.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(_showArchive ? Icons.inventory_2_outlined : Icons.folder_off_outlined, size: 60, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            Text(
+              _showArchive ? 'الأرشيف فارغ' : 'لا توجد سجلات نشطة',
+              style: GoogleFonts.tajawal(fontSize: 16, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 1.1,
+      ),
+      itemCount: categories.length,
+      itemBuilder: (context, index) {
+        final category = categories.keys.elementAt(index);
+        final count = categories[category]!;
+        return _buildCategoryCard(category, count);
+      },
+    );
+  }
+
+  Widget _buildCategoryCard(String title, int count) {
+    return InkWell(
+      onTap: () => setState(() => _selectedCategory = title),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _showArchive ? Colors.amber[50] : const Color(0xFF006400).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _getCategoryIcon(title),
+                color: _showArchive ? Colors.amber[900] : const Color(0xFF006400),
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: GoogleFonts.tajawal(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Colors.black87,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '$count دفاتر',
+                style: GoogleFonts.tajawal(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBooksList(List<dynamic> books) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: books.length,
+      itemBuilder: (context, index) {
+        final book = books[index];
+        return _buildRecordBookCard(book);
+      },
+    );
+  }
+
+  IconData _getCategoryIcon(String title) {
+    if (title.contains('زواج')) return Icons.favorite;
+    if (title.contains('طلاق')) return Icons.heart_broken;
+    if (title.contains('وكالات')) return Icons.handshake;
+    if (title.contains('مبيع')) return Icons.store;
+    if (title.contains('تركة') || title.contains('قسمة')) return Icons.pie_chart;
+    if (title.contains('تصرفات')) return Icons.gavel;
+    if (title.contains('رجعة')) return Icons.replay;
+    return Icons.menu_book;
+  }
+
   Widget _buildRecordBookCard(dynamic book) {
     return Card(
-      elevation: 3,
+      elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
@@ -266,7 +462,7 @@ class _RecordBooksListState extends State<RecordBooksList> {
           borderRadius: BorderRadius.circular(16),
           gradient: LinearGradient(
             colors: [
-              book.statusColor.withOpacity(0.1),
+              book.statusColor.withValues(alpha: 0.1),
               Colors.white,
             ],
             begin: Alignment.topLeft,
@@ -289,7 +485,7 @@ class _RecordBooksListState extends State<RecordBooksList> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: book.statusColor.withOpacity(0.4),
+                          color: book.statusColor.withValues(alpha: 0.4),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -327,7 +523,7 @@ class _RecordBooksListState extends State<RecordBooksList> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: book.statusColor.withOpacity(0.2),
+                      color: book.statusColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(

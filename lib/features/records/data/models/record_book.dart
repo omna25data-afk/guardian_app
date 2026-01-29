@@ -11,6 +11,9 @@ class RecordBook {
   final int totalPages;
   final int usedPages; // Mapped from 'constraints_count'
   final int usagePercentage; // Mapped from 'used_percentage'
+  final String categoryLabel; // New field for hierarchical grouping
+  final bool isActive; // To distinguish current year's books
+
   
   RecordBook({
     required this.id,
@@ -22,6 +25,8 @@ class RecordBook {
     required this.totalPages,
     required this.usedPages,
     required this.usagePercentage,
+    required this.categoryLabel,
+    required this.isActive,
   });
 
   factory RecordBook.fromJson(Map<String, dynamic> json) {
@@ -35,6 +40,8 @@ class RecordBook {
       totalPages: json['total_pages'] ?? 0,
       usedPages: json['constraints_count'] ?? 0,
       usagePercentage: json['used_percentage'] ?? 0,
+      categoryLabel: json['category_label'] ?? 'سجلات عامة',
+      isActive: json['is_active'] == true || json['is_active'] == 1,
     );
   }
 

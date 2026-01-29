@@ -57,6 +57,51 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   String _deliveryStatus = 'preserved'; // preserved | delivered
   DateTime? _deliveryDate;
   File? _deliveryReceiptImage;
+  
+  bool _isSequentialMode = false; // New: Sequential Entry Mode
+
+  // --- Helpers for Date Formatting (English Digits) ---
+  String _formatEnglishDate(DateTime date) {
+    String d = date.day.toString().padLeft(2, '0');
+    String m = date.month.toString().padLeft(2, '0');
+    String y = date.year.toString();
+    return '$d/$m/${y}م'; // Right-to-Left format with English digits + Suffix
+  }
+
+  String _formatHijriDate(HijriCalendar date) {
+    String d = date.hDay.toString().padLeft(2, '0');
+    String m = date.hMonth.toString().padLeft(2, '0');
+    String y = date.hYear.toString();
+    return '$d/$m/${y}هـ'; // Right-to-Left format with English digits + Suffix
+  }
+
+  IconData _getContractIcon(String typeName) {
+    if (typeName.contains('زواج')) return Icons.favorite;
+    if (typeName.contains('طلاق') || typeName.contains('خلع') || typeName.contains('فسخ')) return Icons.heart_broken;
+    if (typeName.contains('رجعة')) return Icons.replay;
+    if (typeName.contains('مبيع')) return Icons.store;
+    if (typeName.contains('وكالة')) return Icons.handshake;
+    if (typeName.contains('تصرفات') || typeName.contains('تنازل')) return Icons.gavel;
+    if (typeName.contains('تركة') || typeName.contains('قسمة')) return Icons.pie_chart;
+    if (typeName.contains('صلح')) return Icons.handshake; 
+    return Icons.description;
+  }
+
+  // --- Date Sync Logic ---
+  void _updateGregorianFromHijri() {
+    // HijriCalendar to DateTime conversion
+    final gDate = _documentDateHijri.hijriToGregorian(_documentDateHijri.hYear, _documentDateHijri.hMonth, _documentDateHijri.hDay);
+    setState(() {
+      _documentDateGregorian = gDate;
+    });
+  }
+
+  void _updateHijriFromGregorian() {
+    final hDate = HijriCalendar.fromDate(_documentDateGregorian);
+    setState(() {
+      _documentDateHijri = hDate;
+    });
+  }
 
   @override
   void initState() {
@@ -436,16 +481,51 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
             ),
           );
           // Clear form
-          _formKey.currentState!.reset();
-          for (var controller in _textControllers.values) {
-            controller.clear();
+          // Handle Sequential Mode or Reset
+          if (_isSequentialMode) {
+            // Keep Date, Type, Book. Increment Entry Number.
+            _formKey.currentState!.reset(); // Resets validators
+             // Keep text controllers that we want to preserve? No, clear parties.
+             // We only want to increment entry Number.
+             int currentEntry = int.tryParse(_entryNumberController.text) ?? 0;
+             
+            for (var entry in _textControllers.entries) {
+               // Logic to detect which fields to clear? 
+               // For now clear all dynamic text fields
+               entry.value.clear();
+            }
+            // Restore Manual Numbers (Entry++)
+            _entryNumberController.text = (currentEntry + 1).toString();
+            // Page number remains same? Or increments? Usually same until full. Keep it.
+            // _pageNumberController.text remains same.
+            
+             setState(() {
+               // Keep contract type and book info
+               _formData.clear();
+               _deliveryReceiptImage = null;
+                // Show specific message
+               ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('تم الحفظ بنجاح. جاهز للقيد التالي رقم ${_entryNumberController.text}'),
+                  backgroundColor: Colors.blue[700],
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+             });
+          } else {
+             // Normal Reset
+            _formKey.currentState!.reset();
+            for (var controller in _textControllers.values) {
+              controller.clear();
+            }
+            setState(() {
+              _selectedContractTypeId = null;
+              _selectedContractType = null;
+              _recordBookInfo = null;
+              _formData.clear();
+              _deliveryReceiptImage = null;
+            });
           }
-          setState(() {
-            _selectedContractTypeId = null;
-            _selectedContractType = null;
-            _recordBookInfo = null;
-            _formData.clear();
-            _deliveryReceiptImage = null;
           });
         }
       } else {
@@ -493,10 +573,15 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                             prefixIcon: const Icon(Icons.category),
                           ),
-                          items: _contractTypes.map((ct) {
                             return DropdownMenuItem<int>(
                               value: ct['id'],
-                              child: Text(ct['name']),
+                              child: Row(
+                                children: [
+                                   Icon(_getContractIcon(ct['name']), color: const Color(0xFF006400).withValues(alpha: 0.8), size: 18),
+                                   const SizedBox(width: 8),
+                                   Text(ct['name']),
+                                ],
+                              ),
                             );
                           }).toList(),
                           onChanged: _onContractTypeChanged,
@@ -561,7 +646,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        _documentDateHijri.toFormat("dd/mm/yyyy"), 
+                                        _formatHijriDate(_documentDateHijri), 
                                         style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)
                                       ),
                                       const Icon(Icons.calendar_month, size: 20, color: Colors.grey),
@@ -584,7 +669,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                                   if (picked != null) {
                                     setState(() {
                                       _documentDateGregorian = picked;
-                                      _updateHijriDate();
+                                      _updateHijriFromGregorian();
                                     });
                                   }
                                 },
@@ -598,7 +683,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        '${_documentDateGregorian.year}/${_documentDateGregorian.month}/${_documentDateGregorian.day}',
+                                        _formatEnglishDate(_documentDateGregorian),
                                         style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)
                                       ),
                                       const Icon(Icons.calendar_today, size: 20, color: Colors.grey),
@@ -663,6 +748,26 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                       ],
                     ),
                     
+                    const SizedBox(height: 16),
+                    
+                    // Sequential Mode Checkbox
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.amber.shade200),
+                      ),
+                      child: CheckboxListTile(
+                        value: _isSequentialMode,
+                        onChanged: (v) => setState(() => _isSequentialMode = v ?? false),
+                        title: Text('تفعيل الإدخال المتسلسل (ترقيم تلقائي)', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+                        subtitle: Text('سيتم حفظ البيانات والاحتفاظ بالتاريخ وزيادة رقم القيد تلقائياً.', style: GoogleFonts.tajawal(fontSize: 12)),
+                        activeColor: const Color(0xFF006400),
+                        secondary: const Icon(Icons.format_list_numbered_rtl, color: Color(0xFF006400)),
+                      ),
+                    ),
+
                     const SizedBox(height: 24),
                     
                     // زر الحفظ
@@ -1113,6 +1218,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     if (picked != null) {
       setState(() {
         _documentDateHijri = picked;
+        _updateGregorianFromHijri(); // Sync
       });
     }
   }
