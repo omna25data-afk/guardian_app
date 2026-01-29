@@ -6,6 +6,8 @@ import 'package:guardian_app/providers/dashboard_provider.dart';
 import 'package:guardian_app/features/dashboard/data/models/dashboard_data.dart';
 import 'package:guardian_app/providers/record_book_provider.dart';
 import 'package:guardian_app/providers/registry_entry_provider.dart';
+import 'package:guardian_app/features/registry/presentation/add_entry_screen.dart';
+import 'package:guardian_app/features/profile/presentation/profile_screen.dart';
 
 // --- Main HomeScreen (Shell) ---
 class HomeScreen extends StatefulWidget {
@@ -22,7 +24,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    // Initialize TabController for the RecordsTab
     _tabController = TabController(length: 2, vsync: this);
   }
 
@@ -42,10 +43,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    // The list of main widgets for the BottomNavigationBar
     final List<Widget> widgetOptions = <Widget>[
       const MainTab(),
-      // RecordsTab is now built directly here to use the TabController
       Column(
         children: [
           Expanded(
@@ -59,9 +58,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
         ],
       ),
-      const AddEntryTab(),
+      const AddEntryScreen(), // Use new AddEntryScreen
       const ToolsTab(),
-      const MoreTab(),
+      const ProfileScreen(), // Use ProfileScreen instead of MoreTab
     ];
 
     return Scaffold(
@@ -71,7 +70,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         backgroundColor: const Color(0xFF006400),
         iconTheme: const IconThemeData(color: Colors.white),
         automaticallyImplyLeading: false,
-        // Conditionally show the TabBar for the Records screen
         bottom: _selectedIndex == 1
             ? TabBar(
                 controller: _tabController,
@@ -94,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           BottomNavigationBarItem(icon: Icon(Icons.book_online), label: 'سجلاتي'),
           BottomNavigationBarItem(icon: Icon(Icons.add_circle, size: 40), label: 'إضافة'),
           BottomNavigationBarItem(icon: Icon(Icons.build), label: 'الأدوات'),
-          BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: 'المزيد'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'حسابي'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: const Color(0xFF006400),
@@ -182,7 +180,7 @@ class _MainTabState extends State<MainTab> {
   }
 }
 
-// --- Widget for displaying Record Books ---
+// --- Widget for displaying Record Books as Cards ---
 class RecordBooksList extends StatefulWidget {
   const RecordBooksList({super.key});
   @override
@@ -211,34 +209,147 @@ class _RecordBooksListState extends State<RecordBooksList> {
         return RefreshIndicator(
           onRefresh: () => provider.fetchRecordBooks(),
           child: ListView.builder(
+            padding: const EdgeInsets.all(12),
             itemCount: provider.recordBooks.length,
             itemBuilder: (context, index) {
               final book = provider.recordBooks[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: ListTile(
-                  leading: CircleAvatar(backgroundColor: book.statusColor, child: Text(book.number.toString(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                  title: Text(book.title),
-                  subtitle: Text(book.contractType),
-                  trailing: SizedBox(
-                    width: 100,
-                    child: Row(children:[
-                      Expanded(child: LinearProgressIndicator(value: book.usagePercentage / 100, backgroundColor: Colors.grey[300], color: book.statusColor,)),
-                      const SizedBox(width: 8),
-                      Text('${book.usagePercentage}%', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                    ])
-                  ),
-                ),
-              );
+              return _buildRecordBookCard(book);
             },
           ),
         );
       },
     );
   }
+
+  Widget _buildRecordBookCard(dynamic book) {
+    return Card(
+      elevation: 3,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [
+              book.statusColor.withOpacity(0.1),
+              Colors.white,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Row
+              Row(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: book.statusColor,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: book.statusColor.withOpacity(0.4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        '📖',
+                        style: const TextStyle(fontSize: 24),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'سجل رقم ${book.number}',
+                          style: GoogleFonts.tajawal(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '${book.contractType} | ${book.hijriYear}هـ',
+                          style: GoogleFonts.tajawal(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: book.statusColor.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      book.statusLabel,
+                      style: TextStyle(
+                        color: book.statusColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Progress Section
+              Row(
+                children: [
+                  Icon(Icons.description, size: 18, color: Colors.grey[600]),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${book.usedPages}/${book.totalPages} صفحة',
+                    style: GoogleFonts.tajawal(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${book.usagePercentage}%',
+                    style: GoogleFonts.tajawal(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: book.statusColor,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Progress Bar
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: book.usagePercentage / 100,
+                  minHeight: 10,
+                  backgroundColor: Colors.grey[300],
+                  valueColor: AlwaysStoppedAnimation<Color>(book.statusColor),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-// --- Widget for displaying Registry Entries ---
+// --- Widget for displaying Registry Entries as Table ---
 class RegistryEntriesList extends StatefulWidget {
   const RegistryEntriesList({super.key});
   @override
@@ -246,6 +357,10 @@ class RegistryEntriesList extends StatefulWidget {
 }
 
 class _RegistryEntriesListState extends State<RegistryEntriesList> {
+  String _sortBy = 'date';
+  bool _sortAscending = false;
+  String? _filterStatus;
+
   @override
   void initState() {
     super.initState();
@@ -264,42 +379,146 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
         if (provider.errorMessage != null) {
           return Center(child: Text(provider.errorMessage!));
         }
-        return RefreshIndicator(
-          onRefresh: () => provider.fetchEntries(),
-          child: ListView.builder(
-            itemCount: provider.entries.length,
-            itemBuilder: (context, index) {
-              final entry = provider.entries[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: ListTile(
-                  leading: Icon(Icons.description, color: entry.statusColor),
-                  title: Text('${entry.firstParty} - ${entry.secondParty}'),
-                  subtitle: Text('${entry.contractType} - ${entry.dateHijri}'),
-                  trailing: Text(entry.statusLabel, style: TextStyle(color: entry.statusColor, fontWeight: FontWeight.bold)),
+        
+        // Filter and sort entries
+        var entries = provider.entries.toList();
+        if (_filterStatus != null) {
+          entries = entries.where((e) => e.statusLabel == _filterStatus).toList();
+        }
+        
+        return Column(
+          children: [
+            // Sort/Filter Bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              color: Colors.grey[100],
+              child: Row(
+                children: [
+                  // Sort dropdown
+                  DropdownButton<String>(
+                    value: _sortBy,
+                    underline: const SizedBox(),
+                    items: const [
+                      DropdownMenuItem(value: 'date', child: Text('التاريخ')),
+                      DropdownMenuItem(value: 'status', child: Text('الحالة')),
+                    ],
+                    onChanged: (v) => setState(() => _sortBy = v!),
+                  ),
+                  IconButton(
+                    icon: Icon(_sortAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 18),
+                    onPressed: () => setState(() => _sortAscending = !_sortAscending),
+                  ),
+                  const Spacer(),
+                  // Filter chips
+                  FilterChip(
+                    label: const Text('الكل'),
+                    selected: _filterStatus == null,
+                    onSelected: (_) => setState(() => _filterStatus = null),
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    label: const Text('مسودة'),
+                    selected: _filterStatus == 'مسودة',
+                    onSelected: (_) => setState(() => _filterStatus = _filterStatus == 'مسودة' ? null : 'مسودة'),
+                  ),
+                ],
+              ),
+            ),
+            // Entries Table
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () => provider.fetchEntries(),
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: entries.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final entry = entries[index];
+                    return _buildEntryRow(entry);
+                  },
                 ),
-              );
-            },
-          ),
+              ),
+            ),
+          ],
         );
       },
     );
   }
+
+  Widget _buildEntryRow(dynamic entry) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          // Status Icon
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: entry.statusColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(Icons.description, color: entry.statusColor),
+          ),
+          const SizedBox(width: 12),
+          // Entry Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${entry.firstParty} - ${entry.secondParty}',
+                  style: GoogleFonts.tajawal(fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(
+                      entry.contractType ?? '',
+                      style: GoogleFonts.tajawal(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      entry.dateHijri ?? '',
+                      style: GoogleFonts.tajawal(fontSize: 12, color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Status Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: entry.statusColor.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              entry.statusLabel,
+              style: TextStyle(
+                color: entry.statusColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-// --- Other placeholder tabs ---
-class AddEntryTab extends StatelessWidget {
-  const AddEntryTab({super.key});
-  @override
-  Widget build(BuildContext context) => const Center(child: Text('إضافة قيد'));
-}
+// --- Tools Tab ---
 class ToolsTab extends StatelessWidget {
   const ToolsTab({super.key});
   @override
-  Widget build(BuildContext context) => const Center(child: Text('الأدوات'));
+  Widget build(BuildContext context) => const Center(child: Text('الأدوات - قريباً'));
 }
-class MoreTab extends StatelessWidget {
-  const MoreTab({super.key});
-  @override
-  Widget build(BuildContext context) => const Center(child: Text('المزيد'));
-}
+

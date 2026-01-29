@@ -13,4 +13,9 @@ class ApiConstants {
   // Records & Registry Endpoints
   static const String recordBooks = "$baseUrl/record-books";
   static const String registryEntries = "$baseUrl/registry-entries";
+  
+  // New Endpoints
+  static const String profile = "$baseUrl/profile";
+  static const String contractTypes = "$baseUrl/contract-types";
+  static String myRecordBook(int contractTypeId) => "$baseUrl/my-record-books/$contractTypeId";
 }
