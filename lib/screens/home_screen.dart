@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:guardian_app/widgets/stat_card.dart';
 import 'package:provider/provider.dart';
 
 import 'package:guardian_app/providers/dashboard_provider.dart';
@@ -17,7 +18,8 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   late TabController _tabController;
 
@@ -66,12 +68,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return Scaffold(
       appBar: AppBar(
         title: const Text('بوابة الأمين الشرعي'),
-        titleTextStyle: GoogleFonts.tajawal(textStyle: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
+        titleTextStyle: GoogleFonts.tajawal(
+            textStyle: textTheme.titleLarge
+                ?.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: const Color(0xFF006400),
         iconTheme: const IconThemeData(color: Colors.white),
         automaticallyImplyLeading: false,
       ),
-      body: _selectedIndex == 1 
+      body: _selectedIndex == 1
           ? Column(
               children: [
                 // Custom Tab Bar Container
@@ -92,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       borderRadius: BorderRadius.circular(25),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
+                          color: Colors.black.withOpacity(0.1),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -101,8 +105,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     indicatorSize: TabBarIndicatorSize.tab,
                     labelColor: Colors.white,
                     unselectedLabelColor: Colors.grey[600],
-                    labelStyle: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 16),
-                    unselectedLabelStyle: GoogleFonts.tajawal(fontWeight: FontWeight.w500, fontSize: 16),
+                    labelStyle: GoogleFonts.tajawal(
+                        fontWeight: FontWeight.bold, fontSize: 16),
+                    unselectedLabelStyle: GoogleFonts.tajawal(
+                        fontWeight: FontWeight.w500, fontSize: 16),
                     dividerColor: Colors.transparent,
                     padding: const EdgeInsets.all(4),
                   ),
@@ -124,14 +130,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
-          BottomNavigationBarItem(icon: Icon(Icons.book_online), label: 'سجلاتي'),
-          BottomNavigationBarItem(icon: Icon(Icons.add_circle, size: 40), label: 'إضافة'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.book_online), label: 'سجلاتي'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.add_circle, size: 40), label: 'إضافة'),
           BottomNavigationBarItem(icon: Icon(Icons.build), label: 'الأدوات'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'حسابي'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: const Color(0xFF006400),
-        unselectedItemColor: Colors.grey[600],
+        unselectedLabelColor: Colors.grey[600],
         showUnselectedLabels: true,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
@@ -167,10 +175,14 @@ class _MainTabState extends State<MainTab> {
         }
         if (provider.errorMessage != null || provider.dashboardData == null) {
           return Center(
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              const Text('حدث خطأ أثناء جلب البيانات', style: TextStyle(fontSize: 16)),
+            child:
+                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Text('حدث خطأ أثناء جلب البيانات',
+                  style: TextStyle(fontSize: 16)),
               const SizedBox(height: 8),
-              ElevatedButton(onPressed: () => provider.fetchDashboard(), child: const Text('إعادة المحاولة')),
+              ElevatedButton(
+                  onPressed: () => provider.fetchDashboard(),
+                  child: const Text('إعادة المحاولة')),
             ]),
           );
         }
@@ -182,14 +194,27 @@ class _MainTabState extends State<MainTab> {
 
   Widget _buildDashboardUI(BuildContext context, DashboardData dashboard) {
     return RefreshIndicator(
-      onRefresh: () => Provider.of<DashboardProvider>(context, listen: false).fetchDashboard(),
+      onRefresh: () => Provider.of<DashboardProvider>(context, listen: false)
+          .fetchDashboard(),
       child: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
           _buildWelcomeCard(context, dashboard),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Text(
+              "إحصائياتي",
+              style: GoogleFonts.tajawal(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           _buildStatsGrid(context, dashboard.stats),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           _buildStatusCard(context, 'حالة الترخيص', dashboard.licenseStatus),
           const SizedBox(height: 12),
           _buildStatusCard(context, 'حالة البطاقة', dashboard.cardStatus),
@@ -199,19 +224,113 @@ class _MainTabState extends State<MainTab> {
   }
 
   Widget _buildWelcomeCard(BuildContext context, DashboardData dashboard) {
-    return Card(elevation: 2, child: Padding(padding: const EdgeInsets.all(16.0), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(dashboard.welcomeMessage, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)), const SizedBox(height: 8), Text(dashboard.dateGregorian, style: Theme.of(context).textTheme.bodyMedium), Text(dashboard.dateHijri, style: Theme.of(context).textTheme.bodyMedium)])));
+    return Card(
+      elevation: 2,
+      shadowColor: Colors.black.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              dashboard.welcomeMessage,
+              style: GoogleFonts.tajawal(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF006400),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(dashboard.dateGregorian,
+                    style: Theme.of(context).textTheme.bodyMedium),
+                Text(dashboard.dateHijri,
+                    style: Theme.of(context).textTheme.bodyMedium),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildStatsGrid(BuildContext context, DashboardStats stats) {
-    return GridView.count(crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 2.5, children: [_buildStatItem(context, 'إجمالي القيود', stats.totalEntries.toString()), _buildStatItem(context, 'المسودات', stats.totalDrafts.toString()), _buildStatItem(context, 'الموثق', stats.totalDocumented.toString()), _buildStatItem(context, 'قيود هذا الشهر', stats.thisMonthEntries.toString())]);
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 2.2, // Adjust aspect ratio for the new card design
+      children: [
+        StatCard(
+          title: 'إجمالي القيود',
+          count: stats.totalEntries.toString(),
+          icon: Icons.all_inbox_outlined,
+          iconColor: Colors.blue,
+        ),
+        StatCard(
+          title: 'المسودات',
+          count: stats.totalDrafts.toString(),
+          icon: Icons.drafts_outlined,
+          iconColor: Colors.orange,
+        ),
+        StatCard(
+          title: 'الموثق',
+          count: stats.totalDocumented.toString(),
+          icon: Icons.check_circle_outline,
+          iconColor: Colors.green,
+        ),
+        StatCard(
+          title: 'قيود هذا الشهر',
+          count: stats.thisMonthEntries.toString(),
+          icon: Icons.calendar_today_outlined,
+          iconColor: Colors.purple,
+        ),
+      ],
+    );
   }
 
-  Widget _buildStatItem(BuildContext context, String label, String value) {
-    return Card(elevation: 1, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), child: Padding(padding: const EdgeInsets.all(8.0), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Text(value, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)), const SizedBox(height: 4), Text(label, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center)])));
-  }
-
-  Widget _buildStatusCard(BuildContext context, String title, RenewalStatus status) {
-    return Card(elevation: 1, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: Theme.of(context).textTheme.titleMedium), const SizedBox(height: 4), Text('تنتهي في: ${status.expiryDate?.year}/${status.expiryDate?.month}/${status.expiryDate?.day}', style: Theme.of(context).textTheme.bodySmall)]), Row(children: [Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: status.color.withAlpha(30), borderRadius: BorderRadius.circular(20)), child: Text(status.label, style: TextStyle(color: status.color, fontWeight: FontWeight.bold))), const SizedBox(width: 8), const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey)])])));
+  Widget _buildStatusCard(
+      BuildContext context, String title, RenewalStatus status) {
+    return Card(
+        elevation: 1,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title,
+                            style: Theme.of(context).textTheme.titleMedium),
+                        const SizedBox(height: 4),
+                        Text(
+                            'تنتهي في: ${status.expiryDate?.year}/${status.expiryDate?.month}/${status.expiryDate?.day}',
+                            style: Theme.of(context).textTheme.bodySmall)
+                      ]),
+                  Row(children: [
+                    Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                            color: status.color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20)),
+                        child: Text(status.label,
+                            style: TextStyle(
+                                color: status.color,
+                                fontWeight: FontWeight.bold))),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_forward_ios,
+                        size: 14, color: Colors.grey)
+                  ])
+                ])));
   }
 }
 
@@ -230,7 +349,8 @@ class _RecordBooksListState extends State<RecordBooksList> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<RecordBookProvider>(context, listen: false).fetchRecordBooks();
+      Provider.of<RecordBookProvider>(context, listen: false)
+          .fetchRecordBooks();
     });
   }
 
@@ -247,19 +367,22 @@ class _RecordBooksListState extends State<RecordBooksList> {
 
         // Filter based on Archive Mode and Category
         final allBooks = provider.recordBooks;
-        
+
         // 1. Filter by Active/Archive
-        final filteredBooks = allBooks.where((b) => _showArchive ? !b.isActive : b.isActive).toList();
+        final filteredBooks = allBooks
+            .where((b) => _showArchive ? !b.isActive : b.isActive)
+            .toList();
 
         // 2. Group by Category
         final categories = <String, int>{};
         for (var book in filteredBooks) {
-          categories[book.categoryLabel] = (categories[book.categoryLabel] ?? 0) + 1;
+          categories[book.categoryLabel] =
+              (categories[book.categoryLabel] ?? 0) + 1;
         }
 
         return Column(
           children: [
-             // Archive Toggle Bar
+            // Archive Toggle Bar
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               color: Colors.grey[50],
@@ -267,10 +390,14 @@ class _RecordBooksListState extends State<RecordBooksList> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    _showArchive ? '🗄️ الأرشيف (السجلات السابقة)' : '📂 السجلات النشطة (الحالية)',
+                    _showArchive
+                        ? '🗄️ الأرشيف (السجلات السابقة)'
+                        : '📂 السجلات النشطة (الحالية)',
                     style: GoogleFonts.tajawal(
                       fontWeight: FontWeight.bold,
-                      color: _showArchive ? Colors.amber[900] : const Color(0xFF006400),
+                      color: _showArchive
+                          ? Colors.amber[900]
+                          : const Color(0xFF006400),
                     ),
                   ),
                   Transform.scale(
@@ -280,23 +407,26 @@ class _RecordBooksListState extends State<RecordBooksList> {
                       onChanged: (val) {
                         setState(() {
                           _showArchive = val;
-                          _selectedCategory = null; // Reset selection when switching modes
+                          _selectedCategory =
+                              null; // Reset selection when switching modes
                         });
                       },
                       activeThumbColor: Colors.amber[900],
                       inactiveThumbColor: const Color(0xFF006400),
-                      inactiveTrackColor: const Color(0xFF006400).withAlpha(50),
+                      inactiveTrackColor:
+                          const Color(0xFF006400).withOpacity(0.1),
                     ),
                   ),
                 ],
               ),
             ),
-            
+
             // Breadcrumb if category selected
             if (_selectedCategory != null)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 color: Colors.white,
                 child: Row(
                   children: [
@@ -309,7 +439,8 @@ class _RecordBooksListState extends State<RecordBooksList> {
                     const SizedBox(width: 8),
                     Text(
                       _selectedCategory!,
-                      style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: GoogleFonts.tajawal(
+                          fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                   ],
                 ),
@@ -321,7 +452,9 @@ class _RecordBooksListState extends State<RecordBooksList> {
                 onRefresh: () => provider.fetchRecordBooks(),
                 child: _selectedCategory == null
                     ? _buildCategoriesGrid(categories)
-                    : _buildBooksList(filteredBooks.where((b) => b.categoryLabel == _selectedCategory).toList()),
+                    : _buildBooksList(filteredBooks
+                        .where((b) => b.categoryLabel == _selectedCategory)
+                        .toList()),
               ),
             ),
           ],
@@ -336,7 +469,12 @@ class _RecordBooksListState extends State<RecordBooksList> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(_showArchive ? Icons.inventory_2_outlined : Icons.folder_off_outlined, size: 60, color: Colors.grey[300]),
+            Icon(
+                _showArchive
+                    ? Icons.inventory_2_outlined
+                    : Icons.folder_off_outlined,
+                size: 60,
+                color: Colors.grey[300]),
             const SizedBox(height: 16),
             Text(
               _showArchive ? 'الأرشيف فارغ' : 'لا توجد سجلات نشطة',
@@ -346,7 +484,7 @@ class _RecordBooksListState extends State<RecordBooksList> {
         ),
       );
     }
-    
+
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -375,7 +513,7 @@ class _RecordBooksListState extends State<RecordBooksList> {
           border: Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -387,12 +525,15 @@ class _RecordBooksListState extends State<RecordBooksList> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _showArchive ? Colors.amber[50] : const Color(0xFF006400).withValues(alpha: 0.1),
+                color: _showArchive
+                    ? Colors.amber[50]
+                    : const Color(0xFF006400).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 _getCategoryIcon(title),
-                color: _showArchive ? Colors.amber[900] : const Color(0xFF006400),
+                color:
+                    _showArchive ? Colors.amber[900] : const Color(0xFF006400),
                 size: 32,
               ),
             ),
@@ -446,7 +587,9 @@ class _RecordBooksListState extends State<RecordBooksList> {
     if (title.contains('طلاق')) return Icons.heart_broken;
     if (title.contains('وكالات')) return Icons.handshake;
     if (title.contains('مبيع')) return Icons.store;
-    if (title.contains('تركة') || title.contains('قسمة')) return Icons.pie_chart;
+    if (title.contains('تركة') || title.contains('قسمة')) {
+      return Icons.pie_chart;
+    }
     if (title.contains('تصرفات')) return Icons.gavel;
     if (title.contains('رجعة')) return Icons.replay;
     return Icons.menu_book;
@@ -462,7 +605,7 @@ class _RecordBooksListState extends State<RecordBooksList> {
           borderRadius: BorderRadius.circular(16),
           gradient: LinearGradient(
             colors: [
-              book.statusColor.withValues(alpha: 0.1),
+              book.statusColor.withOpacity(0.1),
               Colors.white,
             ],
             begin: Alignment.topLeft,
@@ -485,7 +628,7 @@ class _RecordBooksListState extends State<RecordBooksList> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: book.statusColor.withValues(alpha: 0.4),
+                          color: book.statusColor.withOpacity(0.4),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -521,9 +664,10 @@ class _RecordBooksListState extends State<RecordBooksList> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: book.statusColor.withValues(alpha: 0.2),
+                      color: book.statusColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -610,13 +754,14 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
         if (provider.errorMessage != null) {
           return Center(child: Text(provider.errorMessage!));
         }
-        
+
         // Filter and sort entries
         var entries = provider.entries.toList();
         if (_filterStatus != null) {
-          entries = entries.where((e) => e.statusLabel == _filterStatus).toList();
+          entries =
+              entries.where((e) => e.statusLabel == _filterStatus).toList();
         }
-        
+
         return Column(
           children: [
             // Sort/Filter Bar
@@ -636,8 +781,13 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
                     onChanged: (v) => setState(() => _sortBy = v!),
                   ),
                   IconButton(
-                    icon: Icon(_sortAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 18),
-                    onPressed: () => setState(() => _sortAscending = !_sortAscending),
+                    icon: Icon(
+                        _sortAscending
+                            ? Icons.arrow_upward
+                            : Icons.arrow_downward,
+                        size: 18),
+                    onPressed: () =>
+                        setState(() => _sortAscending = !_sortAscending),
                   ),
                   const Spacer(),
                   // Filter chips
@@ -650,7 +800,8 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
                   FilterChip(
                     label: const Text('مسودة'),
                     selected: _filterStatus == 'مسودة',
-                    onSelected: (_) => setState(() => _filterStatus = _filterStatus == 'مسودة' ? null : 'مسودة'),
+                    onSelected: (_) => setState(() => _filterStatus =
+                        _filterStatus == 'مسودة' ? null : 'مسودة'),
                   ),
                 ],
               ),
@@ -695,32 +846,36 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
                     children: [
                       Text(
                         '${entry.firstParty} ضد ${entry.secondParty}',
-                        style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: GoogleFonts.tajawal(
+                            fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '${entry.contractType} | ${entry.dateHijri}هـ',
-                        style: GoogleFonts.tajawal(color: Colors.grey[600], fontSize: 14),
+                        style: GoogleFonts.tajawal(
+                            color: Colors.grey[600], fontSize: 14),
                       ),
                     ],
                   ),
                 ),
                 // Serial Number Badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     '#${entry.serialNumber ?? "-"}',
-                    style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, color: Colors.grey[800]),
+                    style: GoogleFonts.tajawal(
+                        fontWeight: FontWeight.bold, color: Colors.grey[800]),
                   ),
                 ),
               ],
             ),
             const Divider(height: 24),
-            
+
             // Statuses Row
             Row(
               children: [
@@ -740,21 +895,23 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
                   ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Footer: View Details Button
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () => _showEntryDetails(entry),
                 icon: const Icon(Icons.visibility, size: 18),
-                label: Text('عرض التفاصيل', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+                label: Text('عرض التفاصيل',
+                    style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   side: const BorderSide(color: Color(0xFF006400)),
                   foregroundColor: const Color(0xFF006400),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
                 ),
               ),
             ),
@@ -764,13 +921,14 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
     );
   }
 
-  Widget _buildStatusBadge({required String label, required Color color, required IconData icon}) {
+  Widget _buildStatusBadge(
+      {required String label, required Color color, required IconData icon}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -779,7 +937,8 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
           const SizedBox(width: 4),
           Text(
             label,
-            style: GoogleFonts.tajawal(color: color, fontSize: 12, fontWeight: FontWeight.bold),
+            style: GoogleFonts.tajawal(
+                color: color, fontSize: 12, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -790,7 +949,8 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('تفاصيل القيد', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+        title: Text('تفاصيل القيد',
+            style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -802,11 +962,13 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
               _detailRow('نوع العقد', entry.contractType),
               _detailRow('تاريخ الوثيقة', entry.dateHijri),
               const Divider(),
-              _detailRow('حالة التوثيق', entry.statusLabel, color: entry.statusColor),
+              _detailRow('حالة التوثيق', entry.statusLabel,
+                  color: entry.statusColor),
               if (entry.deliveryStatusLabel != null)
-                _detailRow('حالة التسليم', entry.deliveryStatusLabel!, color: entry.deliveryStatusColor),
+                _detailRow('حالة التسليم', entry.deliveryStatusLabel!,
+                    color: entry.deliveryStatusColor),
               const Divider(),
-              _detailRow('الرسوم', '${entry.totalFees} ر.س'),
+              _detailRow('الرسوم', '${entry.totalFees} ر.ي'),
             ],
           ),
         ),
@@ -828,11 +990,13 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
         children: [
           SizedBox(
             width: 100,
-            child: Text(label, style: GoogleFonts.tajawal(color: Colors.grey[600], fontWeight: FontWeight.w500)),
+            child: Text(label,
+                style: GoogleFonts.tajawal(
+                    color: Colors.grey[600], fontWeight: FontWeight.w500)),
           ),
           Expanded(
             child: Text(
-              value, 
+              value,
               style: GoogleFonts.tajawal(
                 fontWeight: FontWeight.bold,
                 color: color ?? Colors.black87,
@@ -849,6 +1013,6 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
 class ToolsTab extends StatelessWidget {
   const ToolsTab({super.key});
   @override
-  Widget build(BuildContext context) => const Center(child: Text('الأدوات - قريباً'));
+  Widget build(BuildContext context) =>
+      const Center(child: Text('الأدوات - قريباً'));
 }
-
