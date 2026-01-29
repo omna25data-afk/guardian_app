@@ -11,19 +11,38 @@ class GuardiansTab extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            color: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  spreadRadius: 1,
+                  blurRadius: 3,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: TabBar(
               isScrollable: true,
-              labelColor: const Color(0xFF006400),
-              unselectedLabelColor: Colors.grey,
-              labelStyle: GoogleFonts.tajawal(fontWeight: FontWeight.bold),
-              indicatorColor: const Color(0xFF006400),
+              tabAlignment: TabAlignment.start, // Align tabs to start (Right)
+              labelColor: Colors.white,
+              unselectedLabelColor: const Color(0xFF006400),
+              labelStyle: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 16), // Bigger font
+              unselectedLabelStyle: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w500),
+              indicatorSize: TabBarIndicatorSize.label,
+              indicator: BoxDecoration(
+                borderRadius: BorderRadius.circular(50),
+                color: const Color(0xFF006400),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              labelPadding: const EdgeInsets.symmetric(horizontal: 16), // Bigger touch area
               tabs: const [
-                Tab(text: 'الأمناء'),
-                Tab(text: 'التراخيص'),
-                Tab(text: 'البطائق'),
-                Tab(text: 'مناطق الإختصاص'),
-                Tab(text: 'التكليفات'),
+                Tab(text: 'الأمناء', height: 40),
+                Tab(text: 'التراخيص', height: 40),
+                Tab(text: 'البطائق', height: 40),
+                Tab(text: 'مناطق الإختصاص', height: 40),
+                Tab(text: 'التكليفات', height: 40),
               ],
             ),
           ),

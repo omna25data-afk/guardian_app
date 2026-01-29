@@ -11,15 +11,23 @@ class ReportsTab extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            color: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+               boxShadow: [BoxShadow(color: Colors.grey.withValues(alpha: 0.1), blurRadius: 3, offset: const Offset(0, 2))],
+            ),
             child: TabBar(
-              labelColor: const Color(0xFF006400),
-              unselectedLabelColor: Colors.grey,
-              labelStyle: GoogleFonts.tajawal(fontWeight: FontWeight.bold),
-              indicatorColor: const Color(0xFF006400),
+              labelColor: Colors.white,
+              unselectedLabelColor: const Color(0xFF006400),
+              labelStyle: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 16),
+              unselectedLabelStyle: GoogleFonts.tajawal(fontSize: 15),
+              indicator: BoxDecoration(
+                borderRadius: BorderRadius.circular(50),
+                color: const Color(0xFF006400),
+              ),
               tabs: const [
-                Tab(text: 'التقارير'),
-                Tab(text: 'الإحصائيات'),
+                Tab(text: 'التقارير', height: 40),
+                Tab(text: 'الإحصائيات', height: 40),
               ],
             ),
           ),
