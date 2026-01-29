@@ -70,22 +70,57 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         backgroundColor: const Color(0xFF006400),
         iconTheme: const IconThemeData(color: Colors.white),
         automaticallyImplyLeading: false,
-        bottom: _selectedIndex == 1
-            ? TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(text: 'سجلاتي'),
-                  Tab(text: 'قيودي'),
-                ],
-                indicatorColor: Colors.white,
-                labelStyle: GoogleFonts.tajawal(fontWeight: FontWeight.bold),
-                unselectedLabelStyle: GoogleFonts.tajawal(),
-              )
-            : null,
       ),
-      body: Center(
-        child: widgetOptions.elementAt(_selectedIndex),
-      ),
+      body: _selectedIndex == 1 
+          ? Column(
+              children: [
+                // Custom Tab Bar Container
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    tabs: const [
+                      Tab(text: 'سجلاتي'),
+                      Tab(text: 'قيودي'),
+                    ],
+                    indicator: BoxDecoration(
+                      color: const Color(0xFF006400),
+                      borderRadius: BorderRadius.circular(25),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.grey[600],
+                    labelStyle: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 16),
+                    unselectedLabelStyle: GoogleFonts.tajawal(fontWeight: FontWeight.w500, fontSize: 16),
+                    dividerColor: Colors.transparent,
+                    padding: const EdgeInsets.all(4),
+                  ),
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: const [
+                      RecordBooksList(),
+                      RegistryEntriesList(),
+                    ],
+                  ),
+                ),
+              ],
+            )
+          : Center(
+              child: widgetOptions.elementAt(_selectedIndex),
+            ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
