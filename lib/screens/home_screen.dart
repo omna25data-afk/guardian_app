@@ -469,7 +469,7 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
                   separatorBuilder: (_, __) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final entry = entries[index];
-                    return _buildEntryRow(entry);
+                    return _buildEntryCard(entry);
                   },
                 ),
               ),
@@ -480,67 +480,166 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
     );
   }
 
-  Widget _buildEntryRow(dynamic entry) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          // Status Icon
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: entry.statusColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(Icons.description, color: entry.statusColor),
-          ),
-          const SizedBox(width: 12),
-          // Entry Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildEntryCard(dynamic entry) {
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header: Contract Info
+            Row(
               children: [
-                Text(
-                  '${entry.firstParty} - ${entry.secondParty}',
-                  style: GoogleFonts.tajawal(fontWeight: FontWeight.w600),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${entry.firstParty} ضد ${entry.secondParty}',
+                        style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${entry.contractType} | ${entry.dateHijri}هـ',
+                        style: GoogleFonts.tajawal(color: Colors.grey[600], fontSize: 14),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      entry.contractType ?? '',
-                      style: GoogleFonts.tajawal(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      entry.dateHijri ?? '',
-                      style: GoogleFonts.tajawal(fontSize: 12, color: Colors.grey[500]),
-                    ),
-                  ],
+                // Serial Number Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '#${entry.serialNumber ?? "-"}',
+                    style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, color: Colors.grey[800]),
+                  ),
                 ),
               ],
             ),
-          ),
-          // Status Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: entry.statusColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
+            const Divider(height: 24),
+            
+            // Statuses Row
+            Row(
+              children: [
+                // Documentation Status
+                _buildStatusBadge(
+                  label: entry.statusLabel,
+                  color: entry.statusColor,
+                  icon: Icons.assignment_turned_in,
+                ),
+                const SizedBox(width: 12),
+                // Delivery Status
+                if (entry.deliveryStatusLabel != null)
+                  _buildStatusBadge(
+                    label: entry.deliveryStatusLabel!,
+                    color: entry.deliveryStatusColor,
+                    icon: Icons.local_shipping,
+                  ),
+              ],
             ),
+            
+            const SizedBox(height: 16),
+            
+            // Footer: View Details Button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _showEntryDetails(entry),
+                icon: const Icon(Icons.visibility, size: 18),
+                label: Text('عرض التفاصيل', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: const BorderSide(color: Color(0xFF006400)),
+                  foregroundColor: const Color(0xFF006400),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge({required String label, required Color color, required IconData icon}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: GoogleFonts.tajawal(color: color, fontSize: 12, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEntryDetails(dynamic entry) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('تفاصيل القيد', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _detailRow('رقم القيد', '#${entry.serialNumber ?? "-"}'),
+              _detailRow('الطرف الأول', entry.firstParty),
+              _detailRow('الطرف الثاني', entry.secondParty),
+              _detailRow('نوع العقد', entry.contractType),
+              _detailRow('تاريخ الوثيقة', entry.dateHijri),
+              const Divider(),
+              _detailRow('حالة التوثيق', entry.statusLabel, color: entry.statusColor),
+              if (entry.deliveryStatusLabel != null)
+                _detailRow('حالة التسليم', entry.deliveryStatusLabel!, color: entry.deliveryStatusColor),
+              const Divider(),
+              _detailRow('الرسوم', '${entry.totalFees} ر.س'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('إغلاق', style: GoogleFonts.tajawal()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(label, style: GoogleFonts.tajawal(color: Colors.grey[600], fontWeight: FontWeight.w500)),
+          ),
+          Expanded(
             child: Text(
-              entry.statusLabel,
-              style: TextStyle(
-                color: entry.statusColor,
+              value, 
+              style: GoogleFonts.tajawal(
                 fontWeight: FontWeight.bold,
-                fontSize: 12,
+                color: color ?? Colors.black87,
               ),
             ),
           ),

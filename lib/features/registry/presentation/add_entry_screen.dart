@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:guardian_app/core/constants/api_constants.dart';
 import 'package:guardian_app/features/auth/data/repositories/auth_repository.dart';
+import 'package:hijri/hijri_calendar.dart';
 
 class AddEntryScreen extends StatefulWidget {
   const AddEntryScreen({super.key});
@@ -32,10 +33,24 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   
   // Section 1: Document dates
   DateTime _documentDateGregorian = DateTime.now();
-  String _documentDateHijri = '';
+  HijriCalendar _documentDateHijri = HijriCalendar.now();
+  
+  // Section 1: Record Book Info (Editable)
+  final TextEditingController _bookNumberController = TextEditingController();
+  final TextEditingController _pageNumberController = TextEditingController();
+  final TextEditingController _entryNumberController = TextEditingController();
   
   // Section 2: Dynamic form data
   final Map<String, dynamic> _formData = {};
+  
+  // Subtypes Info
+  List<Map<String, dynamic>> _subtypes1 = [];
+  List<Map<String, dynamic>> _subtypes2 = [];
+  String? _selectedSubtype1;
+  String? _selectedSubtype2;
+  bool _isLoadingSubtypes1 = false;
+  bool _isLoadingSubtypes2 = false;
+
   final Map<String, TextEditingController> _textControllers = {};
   
   // Section 3: Delivery status
@@ -59,12 +74,8 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   }
 
   void _updateHijriDate() {
-    // Simple Hijri date approximation (for display purposes)
-    // In production, use a proper Hijri calendar library
-    final gregorian = _documentDateGregorian;
-    // Approximate conversion (not accurate, just for display)
-    final hijriYear = ((gregorian.year - 622) * 33 / 32).round();
-    _documentDateHijri = '$hijriYear هـ';
+    HijriCalendar.setLocal('ar');
+    _documentDateHijri = HijriCalendar.fromDate(_documentDateGregorian);
   }
 
   Future<void> _loadContractTypes() async {
@@ -119,11 +130,18 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
         setState(() {
           _recordBookInfo = data;
           _isLoadingRecordBook = false;
+          // Populate editable fields
+          _bookNumberController.text = data['book_number']?.toString() ?? '';
+          _entryNumberController.text = data['next_entry_number']?.toString() ?? '';
+          _pageNumberController.text = data['next_page_number']?.toString() ?? '';
         });
       } else {
         setState(() {
           _recordBookInfo = null;
           _isLoadingRecordBook = false;
+          _bookNumberController.clear();
+          _entryNumberController.clear();
+          _pageNumberController.clear();
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -145,6 +163,9 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       controller.dispose();
     }
     _textControllers.clear();
+    _bookNumberController.clear();
+    _pageNumberController.clear();
+    _entryNumberController.clear();
     
     setState(() {
       _selectedContractTypeId = contractTypeId;
@@ -153,13 +174,96 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
         orElse: () => {},
       );
       _dynamicFields = [];
+      // Clear subtypes
+      _subtypes1 = [];
+      _subtypes2 = [];
+      _selectedSubtype1 = null;
+      _selectedSubtype2 = null;
     });
+    
+    // Load subtypes level 1
+    _fetchSubtypes(contractTypeId, level: 1);
     
     // Load form fields from FormFieldConfig API
     _loadFormFields(contractTypeId);
     
     // Load record book info
     _loadRecordBookInfo(contractTypeId);
+  }
+
+  Future<void> _fetchSubtypes(int contractTypeId, {required int level, String? parentCode}) async {
+    setState(() {
+      if (level == 1) _isLoadingSubtypes1 = true;
+      else _isLoadingSubtypes2 = true;
+    });
+
+    try {
+      final authRepo = Provider.of<AuthRepository>(context, listen: false);
+      final token = await authRepo.getToken();
+      
+      String url = '${ApiConstants.contractTypes}/$contractTypeId/subtypes';
+      if (parentCode != null) {
+        url += '?parent_code=$parentCode';
+      }
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+          'X-Auth-Token': token ?? '',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = List<Map<String, dynamic>>.from(jsonDecode(response.body));
+        setState(() {
+          if (level == 1) {
+            _subtypes1 = data;
+          } else {
+            _subtypes2 = data;
+          }
+        });
+      }
+    } catch (e) {
+      // Ignore errors for subtypes, just empty list
+    } finally {
+      if (mounted) {
+        setState(() {
+          if (level == 1) _isLoadingSubtypes1 = false;
+          else _isLoadingSubtypes2 = false;
+        });
+      }
+    }
+  }
+
+  void _onSubtype1Changed(String? code) {
+    setState(() {
+      _selectedSubtype1 = code;
+      _selectedSubtype2 = null;
+      _subtypes2 = [];
+    });
+    
+    if (code != null) {
+      // Load subtypes level 2
+      _fetchSubtypes(_selectedContractTypeId!, level: 2, parentCode: code);
+    }
+    
+    // Reload form fields with subtype filter
+    if (_selectedContractTypeId != null) {
+      _loadFormFields(_selectedContractTypeId!);
+    }
+  }
+
+  void _onSubtype2Changed(String? code) {
+    setState(() {
+      _selectedSubtype2 = code;
+    });
+    
+    // Reload form fields with subtype filter
+    if (_selectedContractTypeId != null) {
+      _loadFormFields(_selectedContractTypeId!);
+    }
   }
 
   Future<void> _loadFormFields(int contractTypeId) async {
@@ -169,8 +273,16 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       final authRepo = Provider.of<AuthRepository>(context, listen: false);
       final token = await authRepo.getToken();
       
+      String url = ApiConstants.formFields(contractTypeId);
+      if (_selectedSubtype1 != null) {
+        url += (url.contains('?') ? '&' : '?') + 'subtype_1=$_selectedSubtype1';
+      }
+      if (_selectedSubtype2 != null) {
+        url += (url.contains('?') ? '&' : '?') + 'subtype_2=$_selectedSubtype2';
+      }
+      
       final response = await http.get(
-        Uri.parse(ApiConstants.formFields(contractTypeId)),
+        Uri.parse(url),
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
@@ -180,10 +292,21 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
-        final fields = List<Map<String, dynamic>>.from(data['fields'] ?? []);
+        final rawFields = List<Map<String, dynamic>>.from(data['fields'] ?? []);
         
+        // Normalize fields to handle both DB columns and legacy schema keys
+        final normalizedFields = rawFields.map((f) => {
+          'name': f['column_name'] ?? f['name'],
+          'label': f['field_label'] ?? f['label'],
+          'type': f['field_type'] ?? f['type'],
+          'required': f['is_required'] ?? f['required'] ?? false,
+          'placeholder': f['placeholder'],
+          'helper_text': f['helper_text'],
+          'options': f['options'],
+        }).where((f) => f['name'] != null).toList();
+
         // Initialize controllers for text fields
-        for (var field in fields) {
+        for (var field in normalizedFields) {
           final fieldName = field['name'] as String;
           final fieldType = field['type'] as String;
           if (fieldType == 'text' || fieldType == 'textarea' || fieldType == 'number') {
@@ -192,7 +315,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
         }
         
         setState(() {
-          _dynamicFields = fields;
+          _dynamicFields = List<Map<String, dynamic>>.from(normalizedFields);
           _isLoadingFields = false;
         });
       } else {
@@ -267,10 +390,28 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
           'X-Auth-Token': token ?? '',
         },
         body: jsonEncode({
-          'record_book_id': _recordBookInfo!['id'],
+          'record_book_id': _recordBookInfo!['id'], // We still need the ID, assuming it doesn't change or we look it up? 
+          // User asked to edit Entry/Page/Book numbers. Backend usually validates this.
+          // We should send these values if the backend accepts them override.
+          // Assuming backend expects them in 'form_data' or specific fields? 
+          // Default backend usually auto-increments. If we want to override, we might need specific params.
+          // For now, let's send them as separate params if the API supports it, or just rely on the fact they are editable for the USER's record keeping.
+          // The API request in original code sent:
+          /*
+            'record_book_id': _recordBookInfo!['id'],
+            'contract_type_id': _selectedContractTypeId,
+            ...
+          */
+          // If the backend allows overriding entry_number, we should send it.
+          // Let's assume we pass them as additional fields.
           'contract_type_id': _selectedContractTypeId,
+          'subtype_1': _selectedSubtype1,
+          'subtype_2': _selectedSubtype2,
           'document_date_gregorian': _documentDateGregorian.toIso8601String().split('T')[0],
-          'document_date_hijri': _documentDateHijri,
+          'document_date_hijri': _documentDateHijri.toString(), // Use stored Hijri object toString
+          'manual_book_number': _bookNumberController.text,
+          'manual_page_number': _pageNumberController.text,
+          'manual_entry_number': _entryNumberController.text,
           'form_data': _formData,
           'delivery_status': _deliveryStatus,
           'delivery_date': _deliveryStatus == 'delivered' 
@@ -355,34 +496,110 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                           onChanged: _onContractTypeChanged,
                           validator: (v) => v == null ? 'يرجى اختيار نوع العقد' : null,
                         ),
+                        
+                        // Subtypes
+                        if (_isLoadingSubtypes1)
+                           const Padding(padding: EdgeInsets.symmetric(vertical: 8.0), child: Center(child: CircularProgressIndicator())),
+                        
+                        if (_subtypes1.isNotEmpty && !_isLoadingSubtypes1) ...[
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            value: _selectedSubtype1,
+                            items: _subtypes1.map((s) => DropdownMenuItem(value: s['code'], child: Text(s['name']))).toList(),
+                            onChanged: _onSubtype1Changed,
+                            decoration: InputDecoration(
+                              labelText: 'النوع الفرعي *',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              prefixIcon: const Icon(Icons.subdirectory_arrow_left),
+                            ),
+                            validator: (v) => v == null ? 'يرجى اختيار النوع الفرعي' : null,
+                          ),
+                        ],
+                        
+                        if (_isLoadingSubtypes2)
+                           const Padding(padding: EdgeInsets.symmetric(vertical: 8.0), child: Center(child: CircularProgressIndicator())),
+                           
+                        if (_subtypes2.isNotEmpty && !_isLoadingSubtypes2) ...[
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            value: _selectedSubtype2,
+                            items: _subtypes2.map((s) => DropdownMenuItem(value: s['code'], child: Text(s['name']))).toList(),
+                            onChanged: _onSubtype2Changed,
+                            decoration: InputDecoration(
+                              labelText: 'النوع الفرعي الثانوي *',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              prefixIcon: const Icon(Icons.subdirectory_arrow_right),
+                            ),
+                            validator: (v) => v == null ? 'يرجى اختيار النوع الفرعي الثانوي' : null,
+                          ),
+                        ],
+                        
                         const SizedBox(height: 16),
                         
-                        // تاريخ الوثيقة الهجري
-                        _buildDatePicker(
-                          label: 'تاريخ المحرر (هجري)',
-                          displayValue: _documentDateHijri,
-                          onTap: () => _showHijriDatePicker(),
-                        ),
-                        const SizedBox(height: 16),
-                        
-                        // تاريخ الوثيقة الميلادي
-                        _buildDatePicker(
-                          label: 'تاريخ المحرر (ميلادي)',
-                          displayValue: '${_documentDateGregorian.year}/${_documentDateGregorian.month}/${_documentDateGregorian.day}',
-                          onTap: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: _documentDateGregorian,
-                              firstDate: DateTime(2000),
-                              lastDate: DateTime(2100),
-                            );
-                            if (picked != null) {
-                              setState(() {
-                                _documentDateGregorian = picked;
-                                _updateHijriDate();
-                              });
-                            }
-                          },
+                        // تاريخ الوثيقة - هجري وميلادي
+                        Row(
+                          children: [
+                            // Hijri Date
+                            Expanded(
+                              child: InkWell(
+                                onTap: _showHijriDatePicker,
+                                child: InputDecorator(
+                                  decoration: InputDecoration(
+                                    labelText: 'تاريخ المحرر (هجري)',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        _documentDateHijri.toFormat("dd/mm/yyyy"), 
+                                        style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)
+                                      ),
+                                      const Icon(Icons.calendar_month, size: 20, color: Colors.grey),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            // Gregorian Date
+                            Expanded(
+                              child: InkWell(
+                                onTap: () async {
+                                  final picked = await showDatePicker(
+                                    context: context,
+                                    initialDate: _documentDateGregorian,
+                                    firstDate: DateTime(2000),
+                                    lastDate: DateTime(2100),
+                                  );
+                                  if (picked != null) {
+                                    setState(() {
+                                      _documentDateGregorian = picked;
+                                      _updateHijriDate();
+                                    });
+                                  }
+                                },
+                                child: InputDecorator(
+                                  decoration: InputDecoration(
+                                    labelText: 'تاريخ المحرر (ميلادي)',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        '${_documentDateGregorian.year}/${_documentDateGregorian.month}/${_documentDateGregorian.day}',
+                                        style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)
+                                      ),
+                                      const Icon(Icons.calendar_today, size: 20, color: Colors.grey),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
                         
@@ -522,15 +739,12 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _buildInfoChip('رقم السجل', _recordBookInfo!['book_number'].toString())),
-              Expanded(child: _buildInfoChip('السنة الهجرية', _recordBookInfo!['hijri_year'].toString())),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(child: _buildInfoChip('رقم الصفحة', _recordBookInfo!['next_page_number'].toString())),
-              Expanded(child: _buildInfoChip('رقم القيد', _recordBookInfo!['next_entry_number'].toString())),
+              // Order: Entry Number, Page Number, Book Number (as requested)
+              Expanded(child: _buildEditableRecordField('رقم القيد', _entryNumberController)),
+              const SizedBox(width: 8),
+              Expanded(child: _buildEditableRecordField('رقم الصفحة', _pageNumberController)),
+              const SizedBox(width: 8),
+              Expanded(child: _buildEditableRecordField('رقم السجل', _bookNumberController)),
             ],
           ),
         ],
@@ -538,21 +752,25 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     );
   }
 
-  Widget _buildInfoChip(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Text(label, style: GoogleFonts.tajawal(fontSize: 11, color: Colors.grey[600])),
-          const SizedBox(height: 4),
-          Text(value, style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.bold)),
-        ],
-      ),
+  Widget _buildEditableRecordField(String label, TextEditingController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: GoogleFonts.tajawal(fontSize: 11, color: Colors.grey[600])),
+        const SizedBox(height: 4),
+        TextFormField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          style: GoogleFonts.tajawal(fontWeight: FontWeight.bold),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+          ),
+        ),
+      ],
     );
   }
 
@@ -582,6 +800,8 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       final fieldLabel = field['label'] as String;
       final fieldType = field['type'] as String;
       final isRequired = field['required'] == true;
+      final placeholder = field['placeholder'] as String?;
+      final helperText = field['helper_text'] as String?;
       final options = field['options'] as List<dynamic>?;
       
       Widget fieldWidget;
@@ -592,6 +812,8 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
             controller: _textControllers[fieldName],
             decoration: InputDecoration(
               labelText: '$fieldLabel${isRequired ? " *" : ""}',
+              hintText: placeholder,
+              helperText: helperText,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
             validator: isRequired 
@@ -606,6 +828,8 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
             maxLines: 3,
             decoration: InputDecoration(
               labelText: '$fieldLabel${isRequired ? " *" : ""}',
+              hintText: placeholder,
+              helperText: helperText,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
             validator: isRequired 
@@ -620,6 +844,8 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               labelText: '$fieldLabel${isRequired ? " *" : ""}',
+              hintText: placeholder,
+              helperText: helperText,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
             validator: isRequired 
@@ -633,6 +859,8 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
             initialValue: _formData[fieldName] as String?,
             decoration: InputDecoration(
               labelText: '$fieldLabel${isRequired ? " *" : ""}',
+              hintText: placeholder,
+              helperText: helperText,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
             items: options?.map((opt) {
@@ -654,7 +882,8 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
             label: '$fieldLabel${isRequired ? " *" : ""}',
             displayValue: dateValue != null 
                 ? '${dateValue.year}/${dateValue.month}/${dateValue.day}'
-                : 'اختر التاريخ',
+                : (placeholder ?? 'اختر التاريخ'),
+            helperText: helperText,
             onTap: () async {
               final picked = await showDatePicker(
                 context: context,
@@ -678,25 +907,34 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.grey.shade300),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.list, color: Colors.grey),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '$fieldLabel (قائمة متعددة)',
-                    style: GoogleFonts.tajawal(color: Colors.grey[600]),
+                Row(
+                  children: [
+                    const Icon(Icons.list, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '$fieldLabel (قائمة متعددة)',
+                        style: GoogleFonts.tajawal(color: Colors.grey[600]),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle, color: Color(0xFF006400)),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('سيتم إضافة هذه الميزة قريباً')),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                if (helperText != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(helperText, style: GoogleFonts.tajawal(fontSize: 12, color: Colors.grey[600])),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add_circle, color: Color(0xFF006400)),
-                  onPressed: () {
-                    // Repeater feature - will be implemented in future version
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('سيتم إضافة هذه الميزة قريباً')),
-                    );
-                  },
-                ),
               ],
             ),
           );
@@ -707,6 +945,8 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
             controller: _textControllers[fieldName],
             decoration: InputDecoration(
               labelText: fieldLabel,
+              hintText: placeholder,
+              helperText: helperText,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
           );
@@ -723,12 +963,14 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     required String label,
     required String displayValue,
     required VoidCallback onTap,
+    String? helperText,
   }) {
     return InkWell(
       onTap: onTap,
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
+          helperText: helperText,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           prefixIcon: const Icon(Icons.calendar_today),
         ),
@@ -880,6 +1122,97 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                     ),
                   ),
           ),
+        ),
+      ],
+    );
+  }
+  Future<void> _showHijriDatePicker() async {
+    final HijriCalendar? picked = await showDialog<HijriCalendar>(
+      context: context,
+      builder: (context) => HijriDatePickerDialog(
+        initialDate: _documentDateHijri,
+      ),
+    );
+    if (picked != null) {
+      setState(() {
+        _documentDateHijri = picked;
+      });
+    }
+  }
+}
+
+class HijriDatePickerDialog extends StatefulWidget {
+  final HijriCalendar initialDate;
+  const HijriDatePickerDialog({super.key, required this.initialDate});
+
+  @override
+  State<HijriDatePickerDialog> createState() => _HijriDatePickerDialogState();
+}
+
+class _HijriDatePickerDialogState extends State<HijriDatePickerDialog> {
+  late int selectedDay;
+  late int selectedMonth;
+  late int selectedYear;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedDay = widget.initialDate.hDay;
+    selectedMonth = widget.initialDate.hMonth;
+    selectedYear = widget.initialDate.hYear;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('اختر التاريخ الهجري', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold), textAlign: TextAlign.right),
+      content: SingleChildScrollView(
+        child: Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<int>(
+                value: selectedDay,
+                isExpanded: true,
+                items: List.generate(30, (index) => index + 1).map((d) => DropdownMenuItem(value: d, child: Text(d.toString()))).toList(),
+                onChanged: (v) => setState(() => selectedDay = v!),
+                decoration: InputDecoration(labelText: 'يوم', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 0)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: DropdownButtonFormField<int>(
+                value: selectedMonth,
+                isExpanded: true,
+                items: List.generate(12, (index) => index + 1).map((m) => DropdownMenuItem(value: m, child: Text(m.toString()))).toList(),
+                onChanged: (v) => setState(() => selectedMonth = v!),
+                decoration: InputDecoration(labelText: 'شهر', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 0)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: DropdownButtonFormField<int>(
+                value: selectedYear,
+                isExpanded: true,
+                items: List.generate(100, (index) => 1400 + index).map((y) => DropdownMenuItem(value: y, child: Text(y.toString()))).toList(),
+                onChanged: (v) => setState(() => selectedYear = v!),
+                decoration: InputDecoration(labelText: 'سنة', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 0)),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text('إلغاء', style: GoogleFonts.tajawal())),
+        ElevatedButton(
+          onPressed: () {
+            final hDate = HijriCalendar();
+            hDate.hYear = selectedYear;
+            hDate.hMonth = selectedMonth;
+            hDate.hDay = selectedDay;
+            Navigator.pop(context, hDate);
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF006400), foregroundColor: Colors.white),
+          child: Text('موافق', style: GoogleFonts.tajawal()),
         ),
       ],
     );

@@ -3,14 +3,9 @@ import 'package:flutter/material.dart';
 class RegistryEntry {
   final int? id;
   // ... existing fields ...
-  final int? serialNumber;
-  final String statusLabel; // Mapped from 'status_label'
-  final String firstParty; // Mapped from 'first_party_name'
-  final String secondParty; // Mapped from 'second_party_name'
-  final String contractType; // Mapped from 'contract_type.name' or 'contract_type_name' depending on endpoint
-  final String dateHijri; // Mapped from 'document_date.hijri'
-  final String dateGregorian;
-  final double totalFees; // Mapped from 'fees.total'
+  final String? deliveryStatusLabel;
+  final String? statusColorStr; // New
+  final String? deliveryStatusColorStr; // New
 
   RegistryEntry({
     this.id,
@@ -22,6 +17,9 @@ class RegistryEntry {
     required this.dateHijri,
     required this.dateGregorian,
     required this.totalFees,
+    this.deliveryStatusLabel,
+    this.statusColorStr,
+    this.deliveryStatusColorStr,
   });
 
   factory RegistryEntry.fromJson(Map<String, dynamic> json) {
@@ -34,6 +32,9 @@ class RegistryEntry {
       id: json['id'],
       serialNumber: json['serial_number'],
       statusLabel: json['status_label'] ?? '',
+      statusColorStr: json['status_color'], // Parsing backend color
+      deliveryStatusLabel: json['delivery_status_label'],
+      deliveryStatusColorStr: json['delivery_status_color'],
       firstParty: json['first_party_name'] ?? '',
       secondParty: json['second_party_name'] ?? '',
       contractType: contract['name'] ?? json['contract_type_name'] ?? '',
@@ -44,8 +45,26 @@ class RegistryEntry {
   }
 
   Color get statusColor {
-    if (statusLabel.contains('مسودة') || statusLabel.contains('Draft')) return Colors.orange;
-    if (statusLabel.contains('معتمد') || statusLabel.contains('Approved')) return Colors.green;
-    return Colors.grey;
+    return _mapColor(statusColorStr) ?? _mapColorByLabel(statusLabel) ?? Colors.grey;
+  }
+
+  Color get deliveryStatusColor {
+    return _mapColor(deliveryStatusColorStr) ?? Colors.blueGrey;
+  }
+
+  Color? _mapColor(String? colorStr) {
+    if (colorStr == null) return null;
+    if (colorStr == 'success' || colorStr == 'green') return Colors.green;
+    if (colorStr == 'warning' || colorStr == 'amber' || colorStr == 'orange') return Colors.orange;
+    if (colorStr == 'danger' || colorStr == 'red') return Colors.red;
+    if (colorStr == 'info' || colorStr == 'blue') return Colors.blue;
+    if (colorStr == 'gray') return Colors.grey;
+    return null;
+  }
+
+  Color? _mapColorByLabel(String label) {
+    if (label.contains('مسودة') || label.contains('Draft')) return Colors.orange;
+    if (label.contains('معتمد') || label.contains('Approved')) return Colors.green;
+    return null;
   }
 }
