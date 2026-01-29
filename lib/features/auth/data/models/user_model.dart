@@ -4,6 +4,7 @@ class User {
   final String phoneNumber; // Changed from email to phoneNumber
   final String? token;
   final bool isGuardian;
+  final List<String> roles; // Added roles list
   // Guardian profile fields
   final int? guardianId;
   final String? guardianFullName;
@@ -18,6 +19,7 @@ class User {
     required this.phoneNumber,
     this.token,
     required this.isGuardian,
+    required this.roles,
     this.guardianId,
     this.guardianFullName,
     this.avatarUrl,
@@ -36,6 +38,7 @@ class User {
       phoneNumber: userData['phone_number'] ?? '', // Map from phone_number
       token: json['access_token'] ?? json['token'],
       isGuardian: (userData['roles'] as List?)?.contains('legitimate_guardian') ?? false,
+      roles: (userData['roles'] as List?)?.map((e) => e.toString()).toList() ?? [],
       // Guardian profile
       guardianId: guardianData?['id'],
       guardianFullName: guardianData?['full_name'],

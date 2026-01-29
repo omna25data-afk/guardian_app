@@ -9,6 +9,7 @@ import 'package:guardian_app/providers/auth_provider.dart';
 import 'package:guardian_app/features/auth/data/models/user_model.dart';
 import 'package:guardian_app/screens/home_screen.dart';
 import 'package:guardian_app/screens/debug_screen.dart';
+import 'package:guardian_app/features/admin/presentation/screens/admin_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -76,10 +77,18 @@ class _LoginScreenState extends State<LoginScreen> {
                SnackBar(content: Text('تم تسجيل الدخول بنجاح!', style: GoogleFonts.tajawal()), backgroundColor: Colors.green),
              );
 
-             Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const HomeScreen()),
-              );
+             // Check Role for Redirection
+             if (user.roles.contains('super_admin') || user.roles.contains('admin') || user.roles.contains('qlm_manager')) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AdminHomeScreen()),
+                );
+             } else {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                );
+             }
         } else {
           setState(() {
             _errorMessage = data['message'] ?? 'فشل تسجيل الدخول';
