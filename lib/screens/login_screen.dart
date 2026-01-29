@@ -53,8 +53,8 @@ class _LoginScreenState extends State<LoginScreen> {
         final data = jsonDecode(response.body);
         
         if (data['status'] == true) {
-           final userData = data['user'];
-             // is_guardian check removed to allow all roles (Admin, Guardian, etc.)
+             // is_guardian check logic removed
+
              // The HomeScreen will adapt based on the role in the future.
              
              const storage = FlutterSecureStorage();

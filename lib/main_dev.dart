@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+// Material import removed (unused)
 import 'package:guardian_app/core/config/app_config.dart';
 import 'package:guardian_app/main_common.dart';
 
