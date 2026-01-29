@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import '../../../registry/data/models/registry_entry.dart';
 
 class DashboardData {
@@ -63,7 +64,6 @@ class DashboardStats {
   }
 }
 
-import 'package:flutter/material.dart';
 
 class RenewalStatus {
   final String label;
