@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:provider/provider.dart';
 import 'package:guardian_app/core/constants/api_constants.dart';
+import 'package:guardian_app/providers/auth_provider.dart';
+import 'package:guardian_app/features/auth/data/models/user_model.dart';
 import 'package:guardian_app/screens/home_screen.dart';
 import 'package:guardian_app/screens/debug_screen.dart';
 
@@ -50,13 +53,22 @@ class _LoginScreenState extends State<LoginScreen> {
         final data = jsonDecode(response.body);
         
         if (data['status'] == true) {
-           final user = data['user'];
-           final isGuardian = user['is_guardian'] == true;
+           final userData = data['user'];
+           final isGuardian = userData['is_guardian'] == true;
            
            if (isGuardian) {
              const storage = FlutterSecureStorage();
-             await storage.write(key: 'auth_token', value: data['token'] ?? data['access_token']);
-             await storage.write(key: 'user_data', value: jsonEncode(user));
+             final token = data['token'] ?? data['access_token'];
+             await storage.write(key: 'auth_token', value: token);
+             await storage.write(key: 'user_data', value: jsonEncode(data));
+
+             // Create User object with guardian data
+             final user = User.fromJson(data);
+             
+             // Update AuthProvider with user data
+             if (mounted) {
+               Provider.of<AuthProvider>(context, listen: false).setUser(user);
+             }
 
              if (!mounted) return;
 
@@ -98,6 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

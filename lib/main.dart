@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:guardian_app/providers/auth_provider.dart';
 import 'package:guardian_app/providers/dashboard_provider.dart';
 import 'package:guardian_app/providers/record_book_provider.dart';
 import 'package:guardian_app/providers/registry_entry_provider.dart';
@@ -18,6 +19,7 @@ void main() {
   final registryRepository = RegistryRepository(authRepository: authRepository);
 
   runApp(MyApp(
+    authRepository: authRepository,
     dashboardRepository: dashboardRepository,
     recordsRepository: recordsRepository,
     registryRepository: registryRepository,
@@ -25,12 +27,14 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  final AuthRepository authRepository;
   final DashboardRepository dashboardRepository;
   final RecordsRepository recordsRepository;
   final RegistryRepository registryRepository;
 
   const MyApp({
     super.key, 
+    required this.authRepository,
     required this.dashboardRepository,
     required this.recordsRepository,
     required this.registryRepository,
@@ -42,6 +46,12 @@ class MyApp extends StatelessWidget {
 
     return MultiProvider(
       providers: [
+        // Provide AuthRepository for direct access
+        Provider<AuthRepository>.value(value: authRepository),
+        // Provide AuthProvider for state management
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(authRepository: authRepository),
+        ),
         // Provide the DashboardProvider
         ChangeNotifierProvider(
           create: (_) => DashboardProvider(dashboardRepository),
@@ -76,6 +86,9 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
         ),
         home: const LoginScreen(),
+        routes: {
+          '/login': (context) => const LoginScreen(),
+        },
         builder: (context, child) {
           return Directionality(
             textDirection: TextDirection.rtl,
@@ -86,3 +99,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
