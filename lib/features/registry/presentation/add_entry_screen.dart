@@ -281,10 +281,10 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       
       String url = ApiConstants.formFields(contractTypeId);
       if (_selectedSubtype1 != null) {
-        url += (url.contains('?') ? '&' : '?') + 'subtype_1=$_selectedSubtype1';
+        url = '$url${url.contains('?') ? '&' : '?'}subtype_1=$_selectedSubtype1';
       }
       if (_selectedSubtype2 != null) {
-        url += (url.contains('?') ? '&' : '?') + 'subtype_2=$_selectedSubtype2';
+        url = '$url${url.contains('?') ? '&' : '?'}subtype_2=$_selectedSubtype2';
       }
       
       final response = await http.get(
@@ -1150,7 +1150,7 @@ class _HijriDatePickerDialogState extends State<HijriDatePickerDialog> {
                 isExpanded: true,
                 items: List.generate(30, (index) => index + 1).map((d) => DropdownMenuItem(value: d, child: Text(d.toString()))).toList(),
                 onChanged: (v) => setState(() => selectedDay = v!),
-                decoration: InputDecoration(labelText: 'يوم', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 0)),
+                decoration: InputDecoration(labelText: 'يوم', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0)),
               ),
             ),
             const SizedBox(width: 8),
@@ -1160,7 +1160,7 @@ class _HijriDatePickerDialogState extends State<HijriDatePickerDialog> {
                 isExpanded: true,
                 items: List.generate(12, (index) => index + 1).map((m) => DropdownMenuItem(value: m, child: Text(m.toString()))).toList(),
                 onChanged: (v) => setState(() => selectedMonth = v!),
-                decoration: InputDecoration(labelText: 'شهر', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 0)),
+                decoration: InputDecoration(labelText: 'شهر', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0)),
               ),
             ),
             const SizedBox(width: 8),
@@ -1170,7 +1170,7 @@ class _HijriDatePickerDialogState extends State<HijriDatePickerDialog> {
                 isExpanded: true,
                 items: List.generate(100, (index) => 1400 + index).map((y) => DropdownMenuItem(value: y, child: Text(y.toString()))).toList(),
                 onChanged: (v) => setState(() => selectedYear = v!),
-                decoration: InputDecoration(labelText: 'سنة', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 0)),
+                decoration: InputDecoration(labelText: 'سنة', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0)),
               ),
             ),
           ],
