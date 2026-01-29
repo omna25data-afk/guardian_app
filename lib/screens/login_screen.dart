@@ -19,7 +19,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController();
+  final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String _errorMessage = '';
@@ -42,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
           'Accept': 'application/json',
         },
         body: jsonEncode({
-          'phone_number': _phoneController.text,
+          'login_identifier': _identifierController.text,
           'password': _passwordController.text,
         }),
       );
@@ -54,15 +54,15 @@ class _LoginScreenState extends State<LoginScreen> {
         
         if (data['status'] == true) {
            final userData = data['user'];
-           final isGuardian = userData['is_guardian'] == true;
-           
-           if (isGuardian) {
+             // is_guardian check removed to allow all roles (Admin, Guardian, etc.)
+             // The HomeScreen will adapt based on the role in the future.
+             
              const storage = FlutterSecureStorage();
              final token = data['token'] ?? data['access_token'];
              await storage.write(key: 'auth_token', value: token);
              await storage.write(key: 'user_data', value: jsonEncode(data));
 
-             // Create User object with guardian data
+             // Create User object
              final user = User.fromJson(data);
              
              // Update AuthProvider with user data
@@ -80,12 +80,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 context,
                 MaterialPageRoute(builder: (context) => const HomeScreen()),
               );
-
-           } else {
-             setState(() {
-               _errorMessage = 'عذراً، هذا الحساب ليس حساب أمين شرعي.';
-             });
-           }
         } else {
           setState(() {
             _errorMessage = data['message'] ?? 'فشل تسجيل الدخول';
@@ -163,21 +157,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 TextFormField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
+                  controller: _identifierController,
+                  keyboardType: TextInputType.emailAddress, // Generic keyboard
                   textAlign: TextAlign.right,
                   style: GoogleFonts.tajawal(),
                   decoration: InputDecoration(
-                    labelText: 'رقم الجوال',
+                    labelText: 'رقم الجوال أو البريد الإلكتروني',
                     labelStyle: GoogleFonts.tajawal(),
-                    prefixIcon: const Icon(Icons.phone),
+                    prefixIcon: const Icon(Icons.person),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     filled: true,
                     fillColor: Colors.white,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'يرجى إدخال رقم الجوال';
+                      return 'يرجى إدخال بيانات الدخول';
                     }
                     return null;
                   },

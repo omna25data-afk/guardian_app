@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:guardian_app/core/config/app_config.dart';
+import 'package:guardian_app/core/constants/api_constants.dart';
 import 'package:guardian_app/providers/auth_provider.dart';
 import 'package:guardian_app/providers/dashboard_provider.dart';
 import 'package:guardian_app/providers/record_book_provider.dart';
@@ -11,7 +13,10 @@ import 'package:guardian_app/features/registry/data/repositories/registry_reposi
 import 'package:guardian_app/screens/login_screen.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+void mainCommon(AppConfig config) {
+  // Initialize API Constants with the environment-specific URL
+  ApiConstants.init(config.apiBaseUrl);
+
   // Create repositories
   final authRepository = AuthRepository();
   final dashboardRepository = DashboardRepository(authRepository: authRepository);
@@ -19,6 +24,7 @@ void main() {
   final registryRepository = RegistryRepository(authRepository: authRepository);
 
   runApp(MyApp(
+    config: config,
     authRepository: authRepository,
     dashboardRepository: dashboardRepository,
     recordsRepository: recordsRepository,
@@ -27,6 +33,7 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  final AppConfig config;
   final AuthRepository authRepository;
   final DashboardRepository dashboardRepository;
   final RecordsRepository recordsRepository;
@@ -34,6 +41,7 @@ class MyApp extends StatelessWidget {
 
   const MyApp({
     super.key, 
+    required this.config,
     required this.authRepository,
     required this.dashboardRepository,
     required this.recordsRepository,
@@ -46,27 +54,23 @@ class MyApp extends StatelessWidget {
 
     return MultiProvider(
       providers: [
-        // Provide AuthRepository for direct access
+        Provider<AppConfig>.value(value: config),
         Provider<AuthRepository>.value(value: authRepository),
-        // Provide AuthProvider for state management
         ChangeNotifierProvider(
           create: (_) => AuthProvider(authRepository: authRepository),
         ),
-        // Provide the DashboardProvider
         ChangeNotifierProvider(
           create: (_) => DashboardProvider(dashboardRepository),
         ),
-        // Provider for the list of record books
         ChangeNotifierProvider(
           create: (_) => RecordBookProvider(recordsRepository),
         ),
-        // Provider for the list of registry entries
         ChangeNotifierProvider(
           create: (_) => RegistryEntryProvider(registryRepository),
         ),
       ],
       child: MaterialApp(
-        title: 'بوابة الأمين الشرعي',
+        title: config.appName, // Use dynamic App Name
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
@@ -85,18 +89,28 @@ class MyApp extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
-        home: const LoginScreen(),
-        routes: {
-          '/login': (context) => const LoginScreen(),
-        },
+        // Add a Banner for Dev Mode
         builder: (context, child) {
-          return Directionality(
+          child = Directionality(
             textDirection: TextDirection.rtl,
             child: child!,
           );
+          
+          if (config.isDev) {
+            return Banner(
+              message: 'تجريـــب',
+              location: BannerLocation.topStart,
+              color: Colors.red,
+              child: child,
+            );
+          }
+          return child;
+        },
+        home: const LoginScreen(),
+        routes: {
+          '/login': (context) => const LoginScreen(),
         },
       ),
     );
   }
 }
-

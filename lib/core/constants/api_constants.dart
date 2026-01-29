@@ -1,22 +1,27 @@
 class ApiConstants {
-  // Base URL for the API
-  // User confirmed the domain points directly to the app via symlink/public_html
-  static const String baseUrl = "https://darkturquoise-lark-306795.hostingersite.com/api";
+  // Base URL is now dynamic, initialized by main_common.dart
+  static String _baseUrl = "https://darkturquoise-lark-306795.hostingersite.com/api"; 
+
+  static void init(String baseUrl) {
+    _baseUrl = baseUrl;
+  }
+
+  static String get baseUrl => _baseUrl;
   
   // Auth Endpoints
-  static const String login = "$baseUrl/login";
-  static const String logout = "$baseUrl/logout";
+  static String get login => "$_baseUrl/login";
+  static String get logout => "$_baseUrl/logout";
   
   // Dashboard Endpoint
-  static const String dashboard = "$baseUrl/dashboard";
+  static String get dashboard => "$_baseUrl/dashboard";
   
   // Records & Registry Endpoints
-  static const String recordBooks = "$baseUrl/record-books";
-  static const String registryEntries = "$baseUrl/registry-entries";
+  static String get recordBooks => "$_baseUrl/record-books";
+  static String get registryEntries => "$_baseUrl/registry-entries";
   
   // New Endpoints
-  static const String profile = "$baseUrl/profile";
-  static const String contractTypes = "$baseUrl/contract-types";
-  static String myRecordBook(int contractTypeId) => "$baseUrl/my-record-books/$contractTypeId";
-  static String formFields(int contractTypeId) => "$baseUrl/form-fields/$contractTypeId";
+  static String get profile => "$_baseUrl/profile";
+  static String get contractTypes => "$_baseUrl/contract-types";
+  static String myRecordBook(int contractTypeId) => "$_baseUrl/my-record-books/$contractTypeId";
+  static String formFields(int contractTypeId) => "$_baseUrl/form-fields/$contractTypeId";
 }
