@@ -101,15 +101,44 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               itemBuilder: (context) => [
                   PopupMenuItem(
                     value: 'profile',
-                    child: Row(children: [const Icon(Icons.person), const SizedBox(width: 8), Text('الملف الشخصي', style: GoogleFonts.tajawal(fontSize: 16))]), // Bigger text
+                    child: Row(
+                      children: [
+                        Icon(Icons.person, color: Colors.grey[700]), 
+                        const SizedBox(width: 8), 
+                        Text('الملف الشخصي', style: GoogleFonts.tajawal(fontSize: 16))
+                      ],
+                    ),
                   ),
                   PopupMenuItem(
                     value: 'settings',
-                    child: Row(children: [const Icon(Icons.settings), const SizedBox(width: 8), Text('الإعدادات', style: GoogleFonts.tajawal(fontSize: 16))]),
+                    child: Row(
+                      children: [
+                        Icon(Icons.settings, color: Colors.grey[700]), 
+                        const SizedBox(width: 8), 
+                        Text('الإعدادات', style: GoogleFonts.tajawal(fontSize: 16))
+                      ],
+                    ),
                   ),
                   PopupMenuItem(
+                    value: 'dark_mode',
+                    child: Row(
+                      children: [
+                        Icon(Icons.nightlight_round, color: Colors.grey[700]), 
+                        const SizedBox(width: 8), 
+                        Text('الوضع الليلي', style: GoogleFonts.tajawal(fontSize: 16))
+                      ],
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem(
                     value: 'logout',
-                    child: Row(children: [const Icon(Icons.logout, color: Colors.red), const SizedBox(width: 8), Text('تسجيل الخروج', style: GoogleFonts.tajawal(color: Colors.red, fontSize: 16))]),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.logout, color: Colors.red), 
+                        const SizedBox(width: 8), 
+                        Text('تسجيل الخروج', style: GoogleFonts.tajawal(color: Colors.red, fontSize: 16))
+                      ],
+                    ),
                   ),
               ],
             ),

@@ -11,24 +11,23 @@ echo -e "${GREEN}1. Pulling latest code...${NC}"
 git pull origin main
 flutter pub get
 
-# 2. Build Dev APK
-echo -e "${GREEN}2. Building Dev APK (Testing)...${NC}"
-flutter build apk --flavor dev -t lib/main_dev.dart --release
+# 2. Clean previous builds
+echo -e "${GREEN}2. Cleaning previous application artifacts...${NC}"
+rm -rf deploy/*
+mkdir -p deploy
 
-# 3. Build Prod APK
-echo -e "${GREEN}3. Building Prod APK (Official)...${NC}"
+# 3. Build Prod APK ONLY
+echo -e "${GREEN}3. Building Production APK (Official)...${NC}"
 flutter build apk --flavor prod -t lib/main_prod.dart --release
 
-# 4. Prepare Deploy Folder
-echo -e "${GREEN}4. Preparing Deploy Folder...${NC}"
-mkdir -p deploy
-cp build/app/outputs/flutter-apk/app-dev-release.apk deploy/
-cp build/app/outputs/flutter-apk/app-prod-release.apk deploy/
+# 4. Copy to Deploy Folder
+echo -e "${GREEN}4. Copying and Renaming...${NC}"
+cp build/app/outputs/flutter-apk/app-prod-release.apk deploy/Guardian_App_Latest.apk
 
-# 5. Push to Git
-echo -e "${GREEN}5. Pushing builds to Git...${NC}"
-git add deploy/
-git commit -m "Deploy: Automated build upload [$(date)]"
+# 5. Push to Git (Single File)
+echo -e "${GREEN}5. Pushing single build to Git...${NC}"
+git add deploy/Guardian_App_Latest.apk
+git commit -m "Deploy: Updated Production APK [$(date)]"
 git push origin main
 
 echo -e "${GREEN}=== Success! ===${NC}"
