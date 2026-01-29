@@ -260,10 +260,10 @@ class _RecordBooksListState extends State<RecordBooksList> {
                         ),
                       ],
                     ),
-                    child: Center(
+                    child: const Center(
                       child: Text(
                         '📖',
-                        style: const TextStyle(fontSize: 24),
+                        style: TextStyle(fontSize: 24),
                       ),
                     ),
                   ),
