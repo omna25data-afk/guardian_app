@@ -424,21 +424,54 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     return Row(
       children: [
         Expanded(
-          child: RadioListTile<String>(
-            title: Text('محفوظة للتوثيق', style: GoogleFonts.tajawal(fontSize: 14)),
-            value: 'preserved',
-            groupValue: _deliveryStatus,
-            onChanged: (v) => setState(() => _deliveryStatus = v!),
-            contentPadding: EdgeInsets.zero,
+          child: InkWell(
+            onTap: () => setState(() => _deliveryStatus = 'preserved'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: _deliveryStatus == 'preserved' ? const Color(0xFF006400) : Colors.grey,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                color: _deliveryStatus == 'preserved' ? const Color(0xFF006400).withAlpha(25) : null,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _deliveryStatus == 'preserved' ? Icons.radio_button_checked : Icons.radio_button_off,
+                    color: _deliveryStatus == 'preserved' ? const Color(0xFF006400) : Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(child: Text('محفوظة للتوثيق', style: GoogleFonts.tajawal(fontSize: 13))),
+                ],
+              ),
+            ),
           ),
         ),
+        const SizedBox(width: 8),
         Expanded(
-          child: RadioListTile<String>(
-            title: Text('مسلمة لصاحب الشأن', style: GoogleFonts.tajawal(fontSize: 14)),
-            value: 'delivered',
-            groupValue: _deliveryStatus,
-            onChanged: (v) => setState(() => _deliveryStatus = v!),
-            contentPadding: EdgeInsets.zero,
+          child: InkWell(
+            onTap: () => setState(() => _deliveryStatus = 'delivered'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: _deliveryStatus == 'delivered' ? const Color(0xFF006400) : Colors.grey,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                color: _deliveryStatus == 'delivered' ? const Color(0xFF006400).withAlpha(25) : null,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _deliveryStatus == 'delivered' ? Icons.radio_button_checked : Icons.radio_button_off,
+                    color: _deliveryStatus == 'delivered' ? const Color(0xFF006400) : Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(child: Text('مسلمة لصاحب الشأن', style: GoogleFonts.tajawal(fontSize: 13))),
+                ],
+              ),
+            ),
           ),
         ),
       ],
