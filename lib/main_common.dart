@@ -23,7 +23,6 @@ void mainCommon(AppConfig config) {
   final authRepository = AuthRepository();
   final dashboardRepository = DashboardRepository(authRepository: authRepository);
   final recordsRepository = RecordsRepository(authRepository: authRepository);
-  final recordsRepository = RecordsRepository(authRepository: authRepository);
   final registryRepository = RegistryRepository(authRepository: authRepository);
   final adminDashboardRepository = AdminDashboardRepository(authRepository);
 
@@ -31,7 +30,6 @@ void mainCommon(AppConfig config) {
     config: config,
     authRepository: authRepository,
     dashboardRepository: dashboardRepository,
-    recordsRepository: recordsRepository,
     recordsRepository: recordsRepository,
     registryRepository: registryRepository,
     adminDashboardRepository: adminDashboardRepository,
@@ -43,7 +41,6 @@ class MyApp extends StatelessWidget {
   final AuthRepository authRepository;
   final DashboardRepository dashboardRepository;
   final RecordsRepository recordsRepository;
-  final RecordsRepository recordsRepository;
   final RegistryRepository registryRepository;
   final AdminDashboardRepository adminDashboardRepository;
 
@@ -52,7 +49,6 @@ class MyApp extends StatelessWidget {
     required this.config,
     required this.authRepository,
     required this.dashboardRepository,
-    required this.recordsRepository,
     required this.recordsRepository,
     required this.registryRepository,
     required this.adminDashboardRepository,
