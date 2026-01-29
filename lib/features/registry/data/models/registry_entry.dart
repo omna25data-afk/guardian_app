@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 
 class RegistryEntry {
   final int? id;
-  // ... existing fields ...
+  final int? serialNumber;
+  final String statusLabel;
+  final String firstParty;
+  final String secondParty;
+  final String contractType;
+  final String dateHijri;
+  final String dateGregorian;
+  final double totalFees;
   final String? deliveryStatusLabel;
   final String? statusColorStr; // New
   final String? deliveryStatusColorStr; // New

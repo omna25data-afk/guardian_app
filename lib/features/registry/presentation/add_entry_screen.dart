@@ -193,8 +193,11 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
 
   Future<void> _fetchSubtypes(int contractTypeId, {required int level, String? parentCode}) async {
     setState(() {
-      if (level == 1) _isLoadingSubtypes1 = true;
-      else _isLoadingSubtypes2 = true;
+      if (level == 1) {
+        _isLoadingSubtypes1 = true;
+      } else {
+        _isLoadingSubtypes2 = true;
+      }
     });
 
     try {
@@ -230,8 +233,11 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     } finally {
       if (mounted) {
         setState(() {
-          if (level == 1) _isLoadingSubtypes1 = false;
-          else _isLoadingSubtypes2 = false;
+          if (level == 1) {
+            _isLoadingSubtypes1 = false;
+          } else {
+            _isLoadingSubtypes2 = false;
+          }
         });
       }
     }
@@ -505,7 +511,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
                             value: _selectedSubtype1,
-                            items: _subtypes1.map((s) => DropdownMenuItem(value: s['code'], child: Text(s['name']))).toList(),
+                            items: _subtypes1.map<DropdownMenuItem<String>>((s) => DropdownMenuItem<String>(value: s['code'].toString(), child: Text(s['name']))).toList(),
                             onChanged: _onSubtype1Changed,
                             decoration: InputDecoration(
                               labelText: 'النوع الفرعي *',
@@ -523,7 +529,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
                             value: _selectedSubtype2,
-                            items: _subtypes2.map((s) => DropdownMenuItem(value: s['code'], child: Text(s['name']))).toList(),
+                            items: _subtypes2.map<DropdownMenuItem<String>>((s) => DropdownMenuItem<String>(value: s['code'].toString(), child: Text(s['name']))).toList(),
                             onChanged: _onSubtype2Changed,
                             decoration: InputDecoration(
                               labelText: 'النوع الفرعي الثانوي *',
@@ -979,38 +985,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     );
   }
 
-  void _showHijriDatePicker() {
-    // Show a simple dialog for Hijri date input since Flutter doesn't have native Hijri picker
-    final hijriController = TextEditingController(text: _documentDateHijri);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('أدخل التاريخ الهجري', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
-        content: TextField(
-          controller: hijriController,
-          decoration: InputDecoration(
-            hintText: '1446/01/15',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          textDirection: TextDirection.rtl,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('إلغاء', style: GoogleFonts.tajawal()),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() => _documentDateHijri = hijriController.text);
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF006400)),
-            child: Text('تأكيد', style: GoogleFonts.tajawal(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildDeliveryStatusSelector() {
     return Column(
