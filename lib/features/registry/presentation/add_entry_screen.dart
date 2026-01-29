@@ -510,7 +510,8 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                         if (_subtypes1.isNotEmpty && !_isLoadingSubtypes1) ...[
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
-                            value: _selectedSubtype1,
+                            key: ValueKey(_selectedSubtype1 ?? 'subtype1'),
+                            initialValue: _selectedSubtype1,
                             items: _subtypes1.map<DropdownMenuItem<String>>((s) => DropdownMenuItem<String>(value: s['code'].toString(), child: Text(s['name']))).toList(),
                             onChanged: _onSubtype1Changed,
                             decoration: InputDecoration(
@@ -528,7 +529,8 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                         if (_subtypes2.isNotEmpty && !_isLoadingSubtypes2) ...[
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
-                            value: _selectedSubtype2,
+                            key: ValueKey(_selectedSubtype2 ?? 'subtype2'),
+                            initialValue: _selectedSubtype2,
                             items: _subtypes2.map<DropdownMenuItem<String>>((s) => DropdownMenuItem<String>(value: s['code'].toString(), child: Text(s['name']))).toList(),
                             onChanged: _onSubtype2Changed,
                             decoration: InputDecoration(
@@ -1146,7 +1148,8 @@ class _HijriDatePickerDialogState extends State<HijriDatePickerDialog> {
           children: [
             Expanded(
               child: DropdownButtonFormField<int>(
-                value: selectedDay,
+                key: ValueKey('day_$selectedDay'),
+                initialValue: selectedDay,
                 isExpanded: true,
                 items: List.generate(30, (index) => index + 1).map((d) => DropdownMenuItem(value: d, child: Text(d.toString()))).toList(),
                 onChanged: (v) => setState(() => selectedDay = v!),
@@ -1156,7 +1159,8 @@ class _HijriDatePickerDialogState extends State<HijriDatePickerDialog> {
             const SizedBox(width: 8),
             Expanded(
               child: DropdownButtonFormField<int>(
-                value: selectedMonth,
+                key: ValueKey('month_$selectedMonth'),
+                initialValue: selectedMonth,
                 isExpanded: true,
                 items: List.generate(12, (index) => index + 1).map((m) => DropdownMenuItem(value: m, child: Text(m.toString()))).toList(),
                 onChanged: (v) => setState(() => selectedMonth = v!),
@@ -1166,7 +1170,8 @@ class _HijriDatePickerDialogState extends State<HijriDatePickerDialog> {
             const SizedBox(width: 8),
             Expanded(
               child: DropdownButtonFormField<int>(
-                value: selectedYear,
+                key: ValueKey('year_$selectedYear'),
+                initialValue: selectedYear,
                 isExpanded: true,
                 items: List.generate(100, (index) => 1400 + index).map((y) => DropdownMenuItem(value: y, child: Text(y.toString()))).toList(),
                 onChanged: (v) => setState(() => selectedYear = v!),
