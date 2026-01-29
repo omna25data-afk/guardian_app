@@ -78,7 +78,14 @@ class _LoginScreenState extends State<LoginScreen> {
              );
 
              // Check Role for Redirection
-             if (user.roles.contains('super_admin') || user.roles.contains('admin') || user.roles.contains('qlm_manager')) {
+             // Check Role for Redirection
+             if (user.roles.any((role) => [
+               'super_admin', 
+               'director', 
+               'guardian_manager', 
+               'documentation_head',
+               'assistant_director'
+             ].contains(role))) {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (context) => const AdminHomeScreen()),
