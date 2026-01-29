@@ -111,12 +111,12 @@ void main() {
       expect(data['data'], isA<List>());
     });
 
-    // 5. Admin (Director) Access Check (Should see more or different data)
-    test('Fetch Admin Data (Record Books View All)', () async {
+    // 5. Admin (Director) Dashboard Stats Check
+    test('Fetch Admin Dashboard Real Stats', () async {
       expect(directorToken, isNotNull, reason: 'Director Token is required');
 
       final response = await http.get(
-        Uri.parse('$baseUrl/record-books'), // Assuming same endpoint but different logic
+        Uri.parse('$baseUrl/admin/dashboard'),
         headers: {
           'Content-Type': 'application/json', 
           'Accept': 'application/json',
@@ -124,11 +124,13 @@ void main() {
         },
       );
 
-      print('Admin Record Books Response: ${response.body}');
+      print('Admin Dashboard Response: ${response.body}');
       expect(response.statusCode, 200);
       
       final data = jsonDecode(response.body);
-      expect(data['data'], isA<List>());
+      expect(data['stats'], isNotNull);
+      expect(data['stats']['guardians'], isNotNull);
+      expect(data['urgent_actions'], isA<List>());
     });
 
   });
