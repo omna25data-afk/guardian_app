@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen>
                       borderRadius: BorderRadius.circular(25),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -104,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                     indicatorSize: TabBarIndicatorSize.tab,
                     labelColor: Colors.white,
-                    unselectedLabelColor: Colors.grey[600],
+                    // unselectedLabelColor: Colors.grey[600],
                     labelStyle: GoogleFonts.tajawal(
                         fontWeight: FontWeight.bold, fontSize: 16),
                     unselectedLabelStyle: GoogleFonts.tajawal(
@@ -414,7 +414,7 @@ class _RecordBooksListState extends State<RecordBooksList> {
                       activeThumbColor: Colors.amber[900],
                       inactiveThumbColor: const Color(0xFF006400),
                       inactiveTrackColor:
-                          const Color(0xFF006400).withOpacity(0.1),
+                          const Color(0xFF006400).withValues(alpha: 0.1),
                     ),
                   ),
                 ],
@@ -513,7 +513,7 @@ class _RecordBooksListState extends State<RecordBooksList> {
           border: Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -527,7 +527,7 @@ class _RecordBooksListState extends State<RecordBooksList> {
               decoration: BoxDecoration(
                 color: _showArchive
                     ? Colors.amber[50]
-                    : const Color(0xFF006400).withOpacity(0.1),
+                    : const Color(0xFF006400).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -605,7 +605,7 @@ class _RecordBooksListState extends State<RecordBooksList> {
           borderRadius: BorderRadius.circular(16),
           gradient: LinearGradient(
             colors: [
-              book.statusColor.withOpacity(0.1),
+              book.statusColor.withValues(alpha: 0.1),
               Colors.white,
             ],
             begin: Alignment.topLeft,
@@ -628,7 +628,7 @@ class _RecordBooksListState extends State<RecordBooksList> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: book.statusColor.withOpacity(0.4),
+                          color: book.statusColor.withValues(alpha: 0.4),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -667,7 +667,7 @@ class _RecordBooksListState extends State<RecordBooksList> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: book.statusColor.withOpacity(0.2),
+                      color: book.statusColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -926,9 +926,9 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
