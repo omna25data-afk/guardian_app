@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:tab_check_app/features/admin/data/models/admin_guardian_model.dart';
-import 'package:tab_check_app/providers/admin_guardians_provider.dart';
+import 'package:guardian_app/features/admin/data/models/admin_guardian_model.dart';
+import 'package:guardian_app/providers/admin_guardians_provider.dart';
 import 'dart:async';
 
 class AdminGuardiansTab extends StatefulWidget {

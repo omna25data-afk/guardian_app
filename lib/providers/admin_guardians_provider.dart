@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:tab_check_app/features/admin/data/models/admin_guardian_model.dart';
-import 'package:tab_check_app/features/admin/data/repositories/admin_guardian_repository.dart';
+import 'package:guardian_app/features/admin/data/models/admin_guardian_model.dart';
+import 'package:guardian_app/features/admin/data/repositories/admin_guardian_repository.dart';
 
 class AdminGuardiansProvider with ChangeNotifier {
   final AdminGuardianRepository _repository;
