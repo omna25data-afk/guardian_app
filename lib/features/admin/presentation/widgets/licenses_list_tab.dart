@@ -33,13 +33,6 @@ class _LicensesListTabState extends State<LicensesListTab> {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       Provider.of<AdminRenewalsProvider>(context, listen: false)
-          .setSearchQuery(query); // detailed search logic might need review in provider
-      // Actually AdminRenewalsProvider separates fetchLicenses and fetchCards, 
-      // but might share a single 'searchQuery' state if not careful.
-      // Checking provider... it has _searchQuery. 
-      // If we switch tabs, we might want to clear it or handle it separately.
-      // For now, let's just directly call fetch with the new query.
-      Provider.of<AdminRenewalsProvider>(context, listen: false)
           .fetchLicenses(refresh: true, search: query);
     });
   }
@@ -82,18 +75,18 @@ class _LicensesListTabState extends State<LicensesListTab> {
               // Note: provider has lists for licenses and cards.
               // We need to use 'licenses'.
               
-              if (provider.isLoading && provider.licenses.isEmpty) {
+              if (provider.isLoadingLicenses && provider.licenses.isEmpty) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (provider.error != null) {
+              if (provider.licensesError != null) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
                       const SizedBox(height: 16),
-                      Text(provider.error!, textAlign: TextAlign.center),
+                      Text(provider.licensesError!, textAlign: TextAlign.center),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () => _fetchData(),
@@ -122,8 +115,8 @@ class _LicensesListTabState extends State<LicensesListTab> {
 
               return NotificationListener<ScrollNotification>(
                 onNotification: (ScrollNotification scrollInfo) {
-                  if (!provider.isLoading &&
-                      provider.hasMore &&
+                  if (!provider.isLoadingLicenses &&
+                      provider.licensesHasMore &&
                       scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
                     provider.fetchLicenses();
                   }

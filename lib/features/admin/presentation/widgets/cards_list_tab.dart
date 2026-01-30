@@ -72,18 +72,18 @@ class _CardsListTabState extends State<CardsListTab> {
         Expanded(
           child: Consumer<AdminRenewalsProvider>(
             builder: (context, provider, child) {
-              if (provider.isLoading && provider.cards.isEmpty) {
+              if (provider.isLoadingCards && provider.cards.isEmpty) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (provider.error != null) {
+              if (provider.cardsError != null) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
                       const SizedBox(height: 16),
-                      Text(provider.error!, textAlign: TextAlign.center),
+                      Text(provider.cardsError!, textAlign: TextAlign.center),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () => _fetchData(),
@@ -112,8 +112,8 @@ class _CardsListTabState extends State<CardsListTab> {
 
               return NotificationListener<ScrollNotification>(
                 onNotification: (ScrollNotification scrollInfo) {
-                  if (!provider.isLoading &&
-                      provider.hasMore &&
+                  if (!provider.isLoadingCards &&
+                      provider.cardsHasMore &&
                       scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
                     provider.fetchCards();
                   }
