@@ -13,6 +13,8 @@ import 'package:guardian_app/features/registry/data/repositories/registry_reposi
 import 'package:guardian_app/screens/login_screen.dart';
 import 'package:guardian_app/features/admin/data/repositories/admin_dashboard_repository.dart';
 import 'package:guardian_app/providers/admin_dashboard_provider.dart';
+import 'package:guardian_app/features/admin/data/repositories/admin_guardian_repository.dart';
+import 'package:guardian_app/providers/admin_guardians_provider.dart';
 import 'package:provider/provider.dart';
 
 void mainCommon(AppConfig config) {
@@ -76,6 +78,14 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => AdminDashboardProvider(adminDashboardRepository),
+        ),
+        Provider<AdminGuardianRepository>(
+          create: (_) => AdminGuardianRepository(authRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => AdminGuardiansProvider(
+            Provider.of<AdminGuardianRepository>(context, listen: false),
+          ),
         ),
       ],
       child: MaterialApp(
