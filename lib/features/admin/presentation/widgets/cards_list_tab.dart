@@ -121,7 +121,7 @@ class _CardsListTabState extends State<CardsListTab> {
                 },
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  itemCount: provider.cards.length + (provider.hasMore ? 1 : 0),
+                  itemCount: provider.cards.length + (provider.cardsHasMore ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == provider.cards.length) {
                       return const Padding(

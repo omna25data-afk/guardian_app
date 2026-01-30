@@ -124,7 +124,7 @@ class _LicensesListTabState extends State<LicensesListTab> {
                 },
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  itemCount: provider.licenses.length + (provider.hasMore ? 1 : 0),
+                  itemCount: provider.licenses.length + (provider.licensesHasMore ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == provider.licenses.length) {
                       return const Padding(
