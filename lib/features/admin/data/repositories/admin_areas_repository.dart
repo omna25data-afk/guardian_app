@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:guardian_app/features/admin/data/models/admin_area_model.dart';
-import 'package:guardian_app/main_common.dart';
 
 class AdminAreasRepository {
   final String baseUrl;

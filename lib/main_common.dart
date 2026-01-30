@@ -95,7 +95,7 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => AdminRenewalsProvider(
-            AdminRenewalsRepository(baseUrl: config.apiBaseUrl),
+            AdminRenewalsRepository(authRepository),
           ),
         ),
         ChangeNotifierProvider(
