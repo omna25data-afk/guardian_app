@@ -148,13 +148,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 32),
                 Text(
-                  'نظام إدارة قلم التوثيق', // Corrected System Name
+                  'نظام إدارة قلم التوثيق',
                   style: GoogleFonts.tajawal(textStyle: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF006400))),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'بوابة الأمين الشرعي',
-                   style: GoogleFonts.tajawal(textStyle: textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF006400))),
+                  '(قلم التوثيق والأمناء الشرعيين)',
+                   style: GoogleFonts.tajawal(textStyle: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF555555))),
+                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 48),
                 if (_errorMessage.isNotEmpty)
