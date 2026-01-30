@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:guardian_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:guardian_app/features/admin/presentation/widgets/admin_dashboard_tab.dart';
-import 'package:guardian_app/features/admin/presentation/widgets/guardians_tab.dart';
+import 'package:guardian_app/features/admin/presentation/widgets/admin_guardians_tab.dart';
 import 'package:guardian_app/features/admin/presentation/widgets/records_tab.dart';
 import 'package:guardian_app/features/admin/presentation/widgets/reports_tab.dart';
 import 'package:guardian_app/features/admin/presentation/widgets/tools_tab.dart';
@@ -20,7 +20,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
 
   final List<Widget> _pages = [
     const AdminDashboardTab(),
-    const GuardiansTab(),
+    const AdminGuardiansTab(),
     const RecordsTab(),
     const ReportsTab(),
     const ToolsTab(),
