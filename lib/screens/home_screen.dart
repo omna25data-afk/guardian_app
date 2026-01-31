@@ -200,32 +200,68 @@ class _MainTabState extends State<MainTab> {
   }
 
   Widget _buildDashboardUI(BuildContext context, DashboardData dashboard) {
-    return RefreshIndicator(
-      onRefresh: () => Provider.of<DashboardProvider>(context, listen: false)
-          .fetchDashboard(),
-      child: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          _buildWelcomeCard(context, dashboard),
-          const SizedBox(height: 24),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text(
-              "إحصائياتي",
-              style: GoogleFonts.tajawal(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
+    return DefaultTabController(
+      length: 2,
+      child: RefreshIndicator(
+        onRefresh: () => Provider.of<DashboardProvider>(context, listen: false)
+            .fetchDashboard(),
+        child: ListView(
+          padding: const EdgeInsets.all(16.0),
+          children: [
+            _buildWelcomeCard(context, dashboard),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "إحصائياتي",
+                  style: GoogleFonts.tajawal(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                Container(
+                  height: 35,
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: TabBar(
+                    isScrollable: true,
+                    indicator: BoxDecoration(
+                      color: const Color(0xFF006400),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.black54,
+                    labelStyle: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.bold),
+                    tabs: const [
+                       Tab(text: 'القيود'),
+                       Tab(text: 'السجلات'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200, // Fixed height for stats grid area
+              child: TabBarView(
+                children: [
+                   _buildRegistryStatsGrid(context, dashboard.stats),
+                   _buildRecordBookStatsGrid(context, dashboard.stats),
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          _buildStatsGrid(context, dashboard.stats),
-          const SizedBox(height: 24),
-          _buildStatusCard(context, 'حالة الترخيص', dashboard.licenseStatus),
-          const SizedBox(height: 12),
-          _buildStatusCard(context, 'حالة البطاقة', dashboard.cardStatus),
-        ],
+            const SizedBox(height: 24),
+            _buildStatusCard(context, 'حالة الترخيص', dashboard.licenseStatus),
+            const SizedBox(height: 12),
+            _buildStatusCard(context, 'حالة البطاقة', dashboard.cardStatus),
+          ],
+        ),
       ),
     );
   }
@@ -264,14 +300,14 @@ class _MainTabState extends State<MainTab> {
     );
   }
 
-  Widget _buildStatsGrid(BuildContext context, DashboardStats stats) {
+  Widget _buildRegistryStatsGrid(BuildContext context, DashboardStats stats) {
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
-      childAspectRatio: 2.2, // Adjust aspect ratio for the new card design
+      childAspectRatio: 2.2,
       children: [
         StatCard(
           title: 'إجمالي القيود',
@@ -280,22 +316,59 @@ class _MainTabState extends State<MainTab> {
           iconColor: Colors.blue,
         ),
         StatCard(
-          title: 'المسودات',
-          count: stats.totalDrafts.toString(),
-          icon: Icons.drafts_outlined,
-          iconColor: Colors.orange,
-        ),
-        StatCard(
-          title: 'الموثق',
-          count: stats.totalDocumented.toString(),
+          title: 'موثق',
+          count: stats.documentedEntries.toString(),
           icon: Icons.check_circle_outline,
           iconColor: Colors.green,
         ),
         StatCard(
-          title: 'قيود هذا الشهر',
-          count: stats.thisMonthEntries.toString(),
-          icon: Icons.calendar_today_outlined,
-          iconColor: Colors.purple,
+          title: 'بانتظار التوثيق',
+          count: stats.pendingDocumentationEntries.toString(),
+          icon: Icons.access_time_outlined,
+          iconColor: Colors.orange,
+        ),
+        StatCard(
+          title: 'المسودات',
+          count: stats.draftEntries.toString(),
+          icon: Icons.drafts_outlined,
+          iconColor: Colors.grey,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecordBookStatsGrid(BuildContext context, DashboardStats stats) {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 2.2,
+      children: [
+        StatCard(
+          title: 'إجمالي السجلات',
+          count: stats.totalRecordBooks.toString(),
+          icon: Icons.book_outlined,
+          iconColor: Colors.teal,
+        ),
+        StatCard(
+          title: 'سجلات نشطة',
+          count: stats.activeRecordBooks.toString(),
+          icon: Icons.play_circle_outline,
+          iconColor: Colors.green,
+        ),
+        StatCard(
+          title: 'سجلات مغلقة',
+          count: stats.closedRecordBooks.toString(),
+          icon: Icons.lock_outline,
+          iconColor: Colors.redAccent,
+        ),
+        StatCard(
+          title: 'بانتظار الافتتاح',
+          count: stats.pendingRecordBooks.toString(),
+          icon: Icons.pending_outlined,
+          iconColor: Colors.amber,
         ),
       ],
     );

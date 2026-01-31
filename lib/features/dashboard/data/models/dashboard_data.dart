@@ -42,26 +42,52 @@ class DashboardData {
 }
 
 class DashboardStats {
-  final int totalEntries;
-  final int totalDrafts;
-  final int totalDocumented;
+  final Map<String, int> registry;
+  final Map<String, int> recordBooks;
   final int thisMonthEntries;
 
   DashboardStats({
-    required this.totalEntries,
-    required this.totalDrafts,
-    required this.totalDocumented,
+    required this.registry,
+    required this.recordBooks,
     required this.thisMonthEntries,
   });
 
   factory DashboardStats.fromJson(Map<String, dynamic> json) {
-    return DashboardStats(
-      totalEntries: json['total_entries'] ?? 0,
-      totalDrafts: json['total_drafts'] ?? 0,
-      totalDocumented: json['total_documented'] ?? 0,
-      thisMonthEntries: json['this_month_entries'] ?? 0,
-    );
+    // Determine if it's the new nested structure or old flat structure
+    if (json.containsKey('registry_entries')) {
+      final reg = json['registry_entries'] as Map<String, dynamic>? ?? {};
+      final books = json['record_books'] as Map<String, dynamic>? ?? {};
+      
+      return DashboardStats(
+        registry: reg.map((key, value) => MapEntry(key, (value as num).toInt())),
+        recordBooks: books.map((key, value) => MapEntry(key, (value as num).toInt())),
+        thisMonthEntries: json['this_month_entries'] ?? 0,
+      );
+    } else {
+      // Backward compatibility
+      return DashboardStats(
+        registry: {
+          'total': json['total_entries'] ?? 0,
+          'draft': json['total_drafts'] ?? 0,
+          'documented': json['total_documented'] ?? 0,
+        },
+        recordBooks: {},
+        thisMonthEntries: json['this_month_entries'] ?? 0,
+      );
+    }
   }
+
+  // Helpers for easier access
+  int get totalEntries => registry['total'] ?? 0;
+  int get draftEntries => registry['draft'] ?? 0;
+  int get documentedEntries => registry['documented'] ?? 0;
+  int get registeredGuardianEntries => registry['registered_guardian'] ?? 0;
+  int get pendingDocumentationEntries => registry['pending_documentation'] ?? 0;
+
+  int get totalRecordBooks => recordBooks['total'] ?? 0;
+  int get activeRecordBooks => recordBooks['active'] ?? 0;
+  int get closedRecordBooks => recordBooks['closed'] ?? 0;
+  int get pendingRecordBooks => recordBooks['pending'] ?? 0;
 }
 
 
