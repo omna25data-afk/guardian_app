@@ -8,7 +8,9 @@ echo -e "${GREEN}=== Starting Automated Deployment ===${NC}"
 
 # 1. Update Code
 echo -e "${GREEN}1. Pulling latest code...${NC}"
+git stash push -m "Auto-stash before deploy"
 git pull --rebase origin main
+git stash pop || true # Continue even if stash pop fails
 flutter clean
 flutter pub get
 
