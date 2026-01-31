@@ -8,6 +8,7 @@ import 'package:guardian_app/features/dashboard/data/models/dashboard_data.dart'
 import 'package:guardian_app/providers/record_book_provider.dart';
 import 'package:guardian_app/providers/registry_entry_provider.dart';
 import 'package:guardian_app/features/registry/presentation/add_entry_screen.dart';
+import 'package:guardian_app/features/registry/presentation/entry_details_screen.dart'; // Add Import
 import 'package:guardian_app/features/profile/presentation/profile_screen.dart';
 
 // --- Main HomeScreen (Shell) ---
@@ -998,40 +999,19 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
   }
 
   void _showEntryDetails(dynamic entry) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('تفاصيل القيد',
-            style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _detailRow('رقم القيد', '#${entry.serialNumber ?? "-"}'),
-              _detailRow('الطرف الأول', entry.firstParty),
-              _detailRow('الطرف الثاني', entry.secondParty),
-              _detailRow('نوع العقد', entry.contractType),
-              _detailRow('تاريخ الوثيقة', entry.dateHijri),
-              const Divider(),
-              _detailRow('حالة التوثيق', entry.statusLabel,
-                  color: entry.statusColor),
-              if (entry.deliveryStatusLabel != null)
-                _detailRow('حالة التسليم', entry.deliveryStatusLabel!,
-                    color: entry.deliveryStatusColor),
-              const Divider(),
-              _detailRow('الرسوم', '${entry.totalFees} ر.ي'),
-            ],
-          ),
+    if (entry.id == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EntryDetailsScreen(
+          entryId: entry.id!, // Make sure your Entry model has 'id'
+          entrySummary: entry, // Pass specific fields if needed
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('إغلاق', style: GoogleFonts.tajawal()),
-          ),
-        ],
       ),
-    );
+    ).then((_) {
+        // Refresh list when coming back
+         Provider.of<RegistryEntryProvider>(context, listen: false).fetchEntries();
+    });
   }
 
   Widget _detailRow(String label, String value, {Color? color}) {
