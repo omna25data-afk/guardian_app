@@ -813,7 +813,7 @@ class RegistryEntriesList extends StatefulWidget {
 }
 
 class _RegistryEntriesListState extends State<RegistryEntriesList> {
-  String _sortBy = 'document_gregorian_date';
+  final String _sortBy = 'document_gregorian_date';
   bool _sortAscending = false;
   String? _filterStatus;
   int? _filterHijriYear;
@@ -1041,7 +1041,7 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
                             selected: isSelected,
                             selectedColor: const Color(0xFF006400),
                             checkmarkColor: Colors.white,
-                            onSelected: (sel) => setModalState(() => _filterStatus = sel ? s['value'] as String? : null),
+                            onSelected: (sel) => setModalState(() => _filterStatus = sel ? s['value'] : null),
                          );
                       }).toList(),
                    ),
