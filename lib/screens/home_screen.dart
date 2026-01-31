@@ -9,6 +9,7 @@ import 'package:guardian_app/features/dashboard/data/models/dashboard_data.dart'
 import 'package:guardian_app/providers/record_book_provider.dart';
 import 'package:guardian_app/providers/registry_entry_provider.dart';
 import 'package:guardian_app/features/registry/presentation/add_entry_screen.dart';
+import 'package:guardian_app/core/constants/system_constants.dart';
 import 'package:guardian_app/features/registry/presentation/entry_details_screen.dart'; // Add Import
 import 'package:guardian_app/features/profile/presentation/profile_screen.dart';
 import 'dart:convert';
@@ -465,23 +466,27 @@ class _RecordBooksListState extends State<RecordBooksList> {
           'سجلات الوكالات': 0,
         };
 
-        // Helper to map API labels to our 7 categories
-        String getStandardCategory(String label) {
-          if (label.contains('مبيع') || label.contains('بيع')) return 'سجلات المبيع';
-          if (label.contains('زواج') || label.contains('نكاح')) return 'سجلات الزواج';
-          if (label.contains('طلاق')) return 'سجلات الطلاق';
-          if (label.contains('رجعة')) return 'سجلات الرجعة';
-          if (label.contains('تصرف') || label.contains('إقرار')) return 'سجلات التصرفات';
-          if (label.contains('قسمة') || label.contains('تركة')) return 'سجلات القسمة';
-          if (label.contains('وكال')) return 'سجلات الوكالات';
-          return 'أخرى'; // Fallback
+        // Helper to map API contract types to our 7 categories using System IDs
+        String getStandardCategory(RecordBook book) {
+           final typeId = book.contractTypeId; 
+           if (typeId == null) return 'أخرى';
+
+           if (typeId == SystemConstants.CONTRACT_TYPE_MARRIAGE) return 'سجلات الزواج';
+           if (typeId == SystemConstants.CONTRACT_TYPE_DIVORCE) return 'سجلات الطلاق';
+           if (typeId == SystemConstants.CONTRACT_TYPE_RECONCILIATION) return 'سجلات الرجعة';
+           if (typeId == SystemConstants.CONTRACT_TYPE_AGENCY) return 'سجلات الوكالات';
+           if (typeId == SystemConstants.CONTRACT_TYPE_DISPOSITION) return 'سجلات التصرفات';
+           if (typeId == SystemConstants.CONTRACT_TYPE_DIVISION) return 'سجلات القسمة';
+           if (SystemConstants.SALES_TYPES.contains(typeId)) return 'سجلات المبيع';
+           
+           return 'أخرى';
         }
 
         // Process books to find Max Book Number per category
         for (var book in filteredBooks) {
           // Use contractType instead of categoryLabel because categoryLabel is generic (e.g. "Guardian Recording")
           // while contractType holds the specific type (e.g. "Marriage Contract")
-          final standardCat = getStandardCategory(book.contractType);
+          final standardCat = getStandardCategory(book);
           if (categoryMaxNumbers.containsKey(standardCat)) {
              // Sum up the number of physical notebooks reported by the AP (notebooksCount)
              // Each 'book' item from API is now a container that might represent multiple notebooks.
@@ -562,7 +567,7 @@ class _RecordBooksListState extends State<RecordBooksList> {
                 child: _selectedCategory == null
                     ? _buildCategoriesGrid(categoryMaxNumbers)
                     : _buildBooksList(filteredBooks
-                        .where((b) => getStandardCategory(b.contractType) == _selectedCategory)
+                        .where((b) => getStandardCategory(b) == _selectedCategory)
                         .toList()),
               ),
             ),
