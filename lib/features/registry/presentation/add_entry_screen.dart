@@ -11,7 +11,9 @@ import 'package:guardian_app/features/auth/data/repositories/auth_repository.dar
 import 'package:hijri/hijri_calendar.dart';
 
 class AddEntryScreen extends StatefulWidget {
-  const AddEntryScreen({super.key});
+  final int? editEntryId;
+
+  const AddEntryScreen({super.key, this.editEntryId});
 
   @override
   State<AddEntryScreen> createState() => _AddEntryScreenState();

@@ -5,9 +5,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/constants/api_constants.dart';
-import '../../../services/guardian_repository.dart';
-import '../data/repositories/registry_repository.dart';
-import 'add_entry_screen.dart'; // For Edit
+import 'package:guardian_app/features/registry/presentation/add_entry_screen.dart'; // Correct import path
+import 'package:guardian_app/providers/registry_entry_provider.dart'; // Add Provider Import
 
 class EntryDetailsScreen extends StatefulWidget {
   final int entryId;
@@ -42,11 +41,13 @@ class _EntryDetailsScreenState extends State<EntryDetailsScreen> {
     });
 
     try {
-      final repository = Provider.of<RegistryEntryProvider>(context, listen: false).repository;
+      // Access provider just to ensure it's loaded if needed, though we seem to fetch API directly below.
+      // If using provider method:
+      // final provider = Provider.of<RegistryEntryProvider>(context, listen: false);
       // We need a method to get single entry. If not available in repo, we can call API directly here for now or add to repo.
       // Let's assume we call GET /registry-entries/{id}
       
-      final storage = const FlutterSecureStorage();
+      const storage = FlutterSecureStorage();
       final token = await storage.read(key: 'auth_token');
       
       final response = await http.get(
@@ -96,21 +97,26 @@ class _EntryDetailsScreenState extends State<EntryDetailsScreen> {
       );
 
       if (response.statusCode == 200) {
-        // Success
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم إرسال طلب التوثيق بنجاح ✅'), backgroundColor: Colors.green),
-        );
-        _fetchEntryDetails(); // Refresh to show new status
+        if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم إرسال طلب التوثيق بنجاح ✅'), backgroundColor: Colors.green),
+            );
+            _fetchEntryDetails(); // Refresh to show new status
+        }
       } else {
-        final error = json.decode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error['message'] ?? 'فشل الطلب'), backgroundColor: Colors.red),
-        );
+        if (mounted) {
+            final error = json.decode(response.body);
+            ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error['message'] ?? 'فشل الطلب'), backgroundColor: Colors.red),
+            );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطأ في الاتصال: $e'), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('خطأ في الاتصال: $e'), backgroundColor: Colors.red),
+          );
+      }
     } finally {
       if (mounted) setState(() => _isRequestingDoc = false);
     }

@@ -1014,31 +1014,7 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
     });
   }
 
-  Widget _detailRow(String label, String value, {Color? color}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(label,
-                style: GoogleFonts.tajawal(
-                    color: Colors.grey[600], fontWeight: FontWeight.w500)),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: GoogleFonts.tajawal(
-                fontWeight: FontWeight.bold,
-                color: color ?? Colors.black87,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 }
 
 // --- Tools Tab ---
