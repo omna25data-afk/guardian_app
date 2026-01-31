@@ -8,7 +8,7 @@ echo -e "${GREEN}=== Starting Automated Deployment ===${NC}"
 
 # 1. Update Code
 echo -e "${GREEN}1. Pulling latest code...${NC}"
-git pull origin main
+git pull --rebase origin main
 flutter clean
 flutter pub get
 
