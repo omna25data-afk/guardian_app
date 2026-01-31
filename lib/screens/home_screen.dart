@@ -17,6 +17,7 @@ import 'package:http/http.dart' as http;
 import 'package:guardian_app/core/constants/api_constants.dart';
 import 'package:guardian_app/features/auth/data/repositories/auth_repository.dart';
 import 'package:guardian_app/features/registry/data/models/registry_entry.dart';
+import 'package:guardian_app/features/records/data/models/record_book.dart';
 
 // --- Main HomeScreen (Shell) ---
 class HomeScreen extends StatefulWidget {

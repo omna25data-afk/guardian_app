@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 class SystemConstants {
   // Contract Type IDs (Matches Backend Database)
   static const int CONTRACT_TYPE_MARRIAGE = 1;
