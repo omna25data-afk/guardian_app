@@ -392,9 +392,13 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
         for (var field in normalizedFields) {
           final fieldName = field['name'] as String;
           final fieldType = field['type'] as String;
-          if ((fieldType == 'text' || fieldType == 'textarea' || fieldType == 'number') &&
+          if ((fieldType == 'text' || fieldType == 'textarea' || fieldType == 'number' || fieldType == 'hidden') &&
               !_textControllers.containsKey(fieldName)) {
-            _textControllers[fieldName] = TextEditingController();
+            String initialValue = '';
+            if (fieldType == 'hidden') {
+                initialValue = field['placeholder'] ?? '';
+            }
+            _textControllers[fieldName] = TextEditingController(text: initialValue);
           }
         }
         
@@ -420,9 +424,13 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       for (var field in formSchema) {
         final fieldName = field['name'] as String;
         final fieldType = field['type'] as String;
-        if ((fieldType == 'text' || fieldType == 'textarea' || fieldType == 'number') && 
+        if ((fieldType == 'text' || fieldType == 'textarea' || fieldType == 'number' || fieldType == 'hidden') && 
             !_textControllers.containsKey(fieldName)) {
-          _textControllers[fieldName] = TextEditingController();
+          String initialValue = '';
+          if (fieldType == 'hidden') {
+              initialValue = field['placeholder'] ?? '';
+          }
+          _textControllers[fieldName] = TextEditingController(text: initialValue);
         }
       }
       if (mounted) {
@@ -1016,6 +1024,15 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
             },
           );
           break;
+
+        case 'hidden':
+           // If hidden, don't show info, just ensure value is set
+           // We assume 'placeholder' holds the default value for hidden fields
+           if (placeholder != null && !_textControllers.containsKey(fieldName)) {
+               _textControllers[fieldName] = TextEditingController(text: placeholder);
+           }
+           fieldWidget = const SizedBox.shrink();
+           break;
           
         case 'repeater':
           // Simplified repeater - just show a note for now
