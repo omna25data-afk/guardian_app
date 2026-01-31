@@ -404,11 +404,9 @@ class _RecordBooksListState extends State<RecordBooksList> {
           // while contractType holds the specific type (e.g. "Marriage Contract")
           final standardCat = getStandardCategory(book.contractType);
           if (categoryMaxNumbers.containsKey(standardCat)) {
-            // Parse book number (assuming it's numeric or string number)
-            int bookNum = int.tryParse(book.number.toString()) ?? 0;
-            if (bookNum > categoryMaxNumbers[standardCat]!) {
-              categoryMaxNumbers[standardCat] = bookNum;
-            }
+             // Sum up the number of physical notebooks reported by the AP (notebooksCount)
+             // Each 'book' item from API is now a container that might represent multiple notebooks.
+             categoryMaxNumbers[standardCat] = (categoryMaxNumbers[standardCat] ?? 0) + book.notebooksCount;
           }
         }
 
