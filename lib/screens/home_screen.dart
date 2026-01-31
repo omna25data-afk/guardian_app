@@ -695,6 +695,24 @@ class _RecordBooksListState extends State<RecordBooksList> {
                 ],
               ),
               const SizedBox(height: 16),
+              // Statistics Row
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildMiniStat(Icons.list_alt, '${book.totalEntries}', 'إجمالي', Colors.blue),
+                    _buildMiniStat(Icons.check_circle_outline, '${book.completedEntries}', 'موثق', Colors.green),
+                    _buildMiniStat(Icons.history_edu, '${book.draftEntries}', 'غير موثق', Colors.orange),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
               // Progress Section
               Row(
                 children: [
@@ -733,6 +751,27 @@ class _RecordBooksListState extends State<RecordBooksList> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildMiniStat(IconData icon, String value, String label, Color color) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 4),
+            Text(
+              value,
+              style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 16, color: color),
+            ),
+          ],
+        ),
+        Text(
+          label,
+          style: GoogleFonts.tajawal(fontSize: 12, color: Colors.grey[600]),
+        ),
+      ],
     );
   }
 }
