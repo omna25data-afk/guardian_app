@@ -300,9 +300,9 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       _fetchSubtypes(_selectedContractTypeId!, level: 2, parentCode: code);
     }
     
-    // Reload form fields with subtype filter
+    // Filter form fields locally
     if (_selectedContractTypeId != null) {
-      _loadFormFields(_selectedContractTypeId!);
+      _filterFieldsLocally();
     }
   }
 
@@ -311,9 +311,44 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       _selectedSubtype2 = code;
     });
     
-    // Reload form fields with subtype filter
+    // Filter form fields locally
     if (_selectedContractTypeId != null) {
-      _loadFormFields(_selectedContractTypeId!);
+      _filterFieldsLocally();
+    }
+  }
+
+  List<Map<String, dynamic>> _allFields = []; // Cache all fields for local filtering
+
+  void _filterFieldsLocally() {
+    if (_allFields.isEmpty) {
+      if (mounted) setState(() => _dynamicFields = []);
+      return;
+    }
+
+    final filtered = _allFields.where((field) {
+      // Logic:
+      // 1. If field has no subtype -> Show always (Global for this contract)
+      // 2. If field has subtype -> Show only if matches selected subtype
+
+      final fSub1 = field['subtype_1'];
+      final fSub2 = field['subtype_2'];
+
+      // If field is not tied to any subtype, show it
+      if (fSub1 == null && fSub2 == null) return true;
+
+      // If field is tied to subtype 1
+      if (fSub1 != null && fSub1 != _selectedSubtype1) return false;
+
+      // If field is tied to subtype 2
+      if (fSub2 != null && fSub2 != _selectedSubtype2) return false;
+
+      return true;
+    }).toList();
+
+    if (mounted) {
+      setState(() {
+        _dynamicFields = filtered;
+      });
     }
   }
 
@@ -324,13 +359,8 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       final authRepo = Provider.of<AuthRepository>(context, listen: false);
       final token = await authRepo.getToken();
       
+      // Request ALL fields (no subtype params)
       String url = ApiConstants.formFields(contractTypeId);
-      if (_selectedSubtype1 != null) {
-        url = '$url${url.contains('?') ? '&' : '?'}subtype_1=$_selectedSubtype1';
-      }
-      if (_selectedSubtype2 != null) {
-        url = '$url${url.contains('?') ? '&' : '?'}subtype_2=$_selectedSubtype2';
-      }
       
       final response = await http.get(
         Uri.parse(url),
@@ -345,7 +375,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
         final rawFields = List<Map<String, dynamic>>.from(data['fields'] ?? []);
         
-        // Normalize fields to handle both DB columns and legacy schema keys
+        // Normalize fields
         final normalizedFields = rawFields.map((f) => {
           'name': f['column_name'] ?? f['name'],
           'label': f['field_label'] ?? f['label'],
@@ -354,51 +384,54 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
           'placeholder': f['placeholder'],
           'helper_text': f['helper_text'],
           'options': f['options'],
+          'subtype_1': f['subtype_1'], // Keep track of dependencies
+          'subtype_2': f['subtype_2'],
         }).where((f) => f['name'] != null).toList();
 
-        // Initialize controllers for text fields
+        // Initialize controllers only for NEW fields
         for (var field in normalizedFields) {
           final fieldName = field['name'] as String;
           final fieldType = field['type'] as String;
-          if (fieldType == 'text' || fieldType == 'textarea' || fieldType == 'number') {
+          if ((fieldType == 'text' || fieldType == 'textarea' || fieldType == 'number') &&
+              !_textControllers.containsKey(fieldName)) {
             _textControllers[fieldName] = TextEditingController();
           }
         }
         
-        setState(() {
-          _dynamicFields = List<Map<String, dynamic>>.from(normalizedFields);
-          _isLoadingFields = false;
-        });
-      } else {
-        // Fallback to form_schema from contract type if FormFieldConfig not found
-        final formSchema = _selectedContractType?['form_schema'] as List<dynamic>? ?? [];
-        for (var field in formSchema) {
-          final fieldName = field['name'] as String;
-          final fieldType = field['type'] as String;
-          if (fieldType == 'text' || fieldType == 'textarea' || fieldType == 'number') {
-            _textControllers[fieldName] = TextEditingController();
-          }
+        if (mounted) {
+          setState(() {
+            _allFields = List<Map<String, dynamic>>.from(normalizedFields);
+            _isLoadingFields = false;
+          });
+          // Apply initial filter
+          _filterFieldsLocally();
         }
-        setState(() {
-          _dynamicFields = formSchema.map((f) => Map<String, dynamic>.from(f)).toList();
-          _isLoadingFields = false;
-        });
+      } else {
+        // Fallback to form_schema from contract type
+        _useFallbackSchema();
       }
     } catch (e) {
-      // Fallback to form_schema
-      final formSchema = _selectedContractType?['form_schema'] as List<dynamic>? ?? [];
+      _useFallbackSchema();
+    }
+  }
+
+  void _useFallbackSchema() {
+     final formSchema = _selectedContractType?['form_schema'] as List<dynamic>? ?? [];
       for (var field in formSchema) {
         final fieldName = field['name'] as String;
         final fieldType = field['type'] as String;
-        if (fieldType == 'text' || fieldType == 'textarea' || fieldType == 'number') {
+        if ((fieldType == 'text' || fieldType == 'textarea' || fieldType == 'number') && 
+            !_textControllers.containsKey(fieldName)) {
           _textControllers[fieldName] = TextEditingController();
         }
       }
-      setState(() {
-        _dynamicFields = formSchema.map((f) => Map<String, dynamic>.from(f)).toList();
-        _isLoadingFields = false;
-      });
-    }
+      if (mounted) {
+        setState(() {
+          _allFields = formSchema.map((f) => Map<String, dynamic>.from(f)).toList();
+          _dynamicFields = List.from(_allFields);
+          _isLoadingFields = false;
+        });
+      }
   }
 
   Future<void> _pickDeliveryReceiptImage() async {
