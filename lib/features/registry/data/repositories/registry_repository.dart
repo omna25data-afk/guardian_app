@@ -9,11 +9,18 @@ class RegistryRepository {
 
   RegistryRepository({required this.authRepository});
 
-  Future<List<RegistryEntry>> getRegistryEntries({String? status, String? searchQuery}) async {
+  Future<List<RegistryEntry>> getRegistryEntries({
+    String? status, 
+    String? searchQuery,
+    int? bookNumber,
+    int? contractTypeId,
+  }) async {
     final token = await authRepository.getToken();
     var queryParams = {
       'status': status,
       'search': searchQuery,
+      'book_number': bookNumber?.toString(),
+      'contract_type_id': contractTypeId?.toString(),
     };
     queryParams.removeWhere((key, value) => value == null);
 

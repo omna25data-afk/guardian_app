@@ -793,7 +793,15 @@ class _RecordBooksListState extends State<RecordBooksList> {
 
 // --- Widget for displaying Registry Entries as Table ---
 class RegistryEntriesList extends StatefulWidget {
-  const RegistryEntriesList({super.key});
+  final int? bookNumber;
+  final int? contractTypeId;
+
+  const RegistryEntriesList({
+    super.key, 
+    this.bookNumber, 
+    this.contractTypeId,
+  });
+
   @override
   State<RegistryEntriesList> createState() => _RegistryEntriesListState();
 }
@@ -807,7 +815,10 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<RegistryEntryProvider>(context, listen: false).fetchEntries();
+      Provider.of<RegistryEntryProvider>(context, listen: false).fetchEntries(
+        bookNumber: widget.bookNumber,
+        contractTypeId: widget.contractTypeId,
+      );
     });
   }
 

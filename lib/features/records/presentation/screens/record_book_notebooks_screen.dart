@@ -7,6 +7,7 @@ import 'package:guardian_app/core/constants/api_constants.dart';
 import 'package:guardian_app/features/auth/data/repositories/auth_repository.dart';
 import 'package:guardian_app/features/records/data/models/physical_notebook.dart';
 import 'package:guardian_app/features/records/data/models/record_book_template.dart';
+import 'package:guardian_app/features/registry/presentation/registry_entries_screen.dart';
 
 class RecordBookNotebooksScreen extends StatefulWidget {
   final int contractTypeId;
@@ -59,6 +60,55 @@ class _RecordBookNotebooksScreenState extends State<RecordBookNotebooksScreen> {
     } catch (e) {
       _showError('حدث خطأ: $e');
     }
+  }
+
+  void _showInfoDialog(PhysicalNotebook notebook) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('معلومات السجل', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildInfoItem(Icons.book, 'رقم الدفتر المرجعي', '${notebook.bookNumber}'),
+            _buildInfoItem(Icons.list_alt, 'إجمالي عدد القيود', '${notebook.entriesCount}'),
+            _buildInfoItem(Icons.account_balance, 'رقم سجل وزارة العدل', notebook.ministryRecordNumber ?? 'غير محدد'),
+            _buildInfoItem(Icons.description, 'قالب السجل المعتمد', notebook.templateName ?? 'غير محدد'),
+            _buildInfoItem(Icons.calendar_today, 'سنة الصرف للهيئة', notebook.issuanceYear != null ? '${notebook.issuanceYear} هـ' : 'غير محدد'),
+            _buildInfoItem(Icons.history, 'سنوات العمل والقيود', notebook.years.join('، ')),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('إغلاق', style: GoogleFonts.tajawal()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: const Color(0xFF006400)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: GoogleFonts.tajawal(fontSize: 12, color: Colors.grey[600])),
+                Text(value, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showError(String msg) {
@@ -151,16 +201,28 @@ class _RecordBookNotebooksScreenState extends State<RecordBookNotebooksScreen> {
                 ),
                 PopupMenuButton<String>(
                    onSelected: (v) {
-                      if (v == 'edit') {
+                      } else if (v == 'edit') {
                          _openEditDialog(book);
+                      } else if (v == 'info') {
+                         _showInfoDialog(book);
                       } else if (v == 'view') {
-                         // TODO: Navigate to entries filtered by book number
+                         Navigator.push(context, MaterialPageRoute(
+                            builder: (context) => RegistryEntriesScreen(
+                               bookNumber: book.bookNumber,
+                               contractTypeId: widget.contractTypeId,
+                               title: 'قيود الدفتر رقم ${book.bookNumber}',
+                            ),
+                         ));
                       }
                    },
                    itemBuilder: (ctx) => [
                       PopupMenuItem(
                         value: 'view',
                         child: Row(children: [Icon(Icons.visibility, size: 18), SizedBox(width: 8), Text('عرض القيود')]),
+                      ),
+                      PopupMenuItem(
+                        value: 'info',
+                        child: Row(children: [Icon(Icons.info_outline, size: 18), SizedBox(width: 8), Text('معلومات السجل')]),
                       ),
                       PopupMenuItem(
                         value: 'edit',

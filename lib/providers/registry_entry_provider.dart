@@ -19,13 +19,23 @@ class RegistryEntryProvider with ChangeNotifier {
 
   /// Fetches the list of registry entries from the repository.
   /// Can be filtered by status or a search query.
-  Future<void> fetchEntries({String? status, String? searchQuery}) async {
+  Future<void> fetchEntries({
+    String? status, 
+    String? searchQuery,
+    int? bookNumber,
+    int? contractTypeId,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      _entries = await _repository.getRegistryEntries(status: status, searchQuery: searchQuery);
+      _entries = await _repository.getRegistryEntries(
+        status: status, 
+        searchQuery: searchQuery,
+        bookNumber: bookNumber,
+        contractTypeId: contractTypeId,
+      );
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
