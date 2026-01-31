@@ -17,6 +17,7 @@ class RecordBook {
   final int completedEntries;
   final int draftEntries;
   final int notebooksCount;
+  final int? contractTypeId;
   
   RecordBook({
     required this.id,
@@ -34,6 +35,7 @@ class RecordBook {
     this.completedEntries = 0,
     this.draftEntries = 0,
     this.notebooksCount = 1,
+    this.contractTypeId,
   });
 
   factory RecordBook.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,7 @@ class RecordBook {
       completedEntries: json['completed_entries_count'] ?? 0,
       draftEntries: json['draft_entries_count'] ?? 0,
       notebooksCount: json['notebooks_count'] ?? 1,
+      contractTypeId: json['contract_type_id'],
     );
   }
 

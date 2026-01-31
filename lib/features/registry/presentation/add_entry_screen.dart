@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:guardian_app/core/constants/api_constants.dart';
 import 'package:guardian_app/features/auth/data/repositories/auth_repository.dart';
 import 'package:hijri/hijri_calendar.dart';
+import 'package:guardian_app/features/records/data/models/record_book.dart'; // Import RecordBook model
 
 class AddEntryScreen extends StatefulWidget {
   final int? editEntryId;
@@ -25,11 +26,17 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   // State
   bool _isLoading = false;
   bool _isLoadingContractTypes = true;
-  bool _isLoadingRecordBook = false;
+  bool _isLoadingRecordBooks = false; // Changed name
   List<Map<String, dynamic>> _contractTypes = [];
   int? _selectedContractTypeId;
   Map<String, dynamic>? _selectedContractType;
-  Map<String, dynamic>? _recordBookInfo;
+  
+  // Record Books State
+  List<RecordBook> _allRecordBooks = [];
+  List<RecordBook> _filteredRecordBooks = [];
+  RecordBook? _selectedRecordBook;
+  // Map<String, dynamic>? _recordBookInfo; // Removed in favor of _selectedRecordBook
+
   List<Map<String, dynamic>> _dynamicFields = [];  // Fields from FormFieldConfig
   bool _isLoadingFields = false;
   
@@ -96,6 +103,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     setState(() {
       _documentDateGregorian = gDate;
     });
+    _filterRecordBooks();
   }
 
   void _updateHijriFromGregorian() {
@@ -103,6 +111,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     setState(() {
       _documentDateHijri = hDate;
     });
+    _filterRecordBooks();
   }
 
   @override
@@ -156,15 +165,21 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     }
   }
 
-  Future<void> _loadRecordBookInfo(int contractTypeId) async {
-    setState(() => _isLoadingRecordBook = true);
+  Future<void> _fetchAllRecordBooks() async {
+    // Only fetch if not already fetched (or force refresh if needed)
+    if (_allRecordBooks.isNotEmpty) {
+       _filterRecordBooks();
+       return;
+    }
+
+    setState(() => _isLoadingRecordBooks = true);
     
     try {
       final authRepo = Provider.of<AuthRepository>(context, listen: false);
       final token = await authRepo.getToken();
       
       final response = await http.get(
-        Uri.parse(ApiConstants.myRecordBook(contractTypeId)),
+        Uri.parse(ApiConstants.recordBooks), // Fetch all grouped books
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
@@ -174,31 +189,110 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
-        setState(() {
-          _recordBookInfo = data;
-          _isLoadingRecordBook = false;
-          // Populate editable fields
-          _bookNumberController.text = data['book_number']?.toString() ?? '';
-          _entryNumberController.text = data['next_entry_number']?.toString() ?? '';
-          _pageNumberController.text = data['next_page_number']?.toString() ?? '';
-        });
-      } else {
-        setState(() {
-          _recordBookInfo = null;
-          _isLoadingRecordBook = false;
-          _bookNumberController.clear();
-          _entryNumberController.clear();
-          _pageNumberController.clear();
-        });
+        final list = List<RecordBook>.from(data['data'].map((x) => RecordBook.fromJson(x)));
+        
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('لا يوجد سجل نشط لهذا النوع من العقود')),
-          );
+           setState(() {
+             _allRecordBooks = list;
+             _isLoadingRecordBooks = false;
+           });
+           _filterRecordBooks();
         }
+      } else {
+        if (mounted) setState(() => _isLoadingRecordBooks = false);
       }
     } catch (e) {
-      setState(() => _isLoadingRecordBook = false);
+      if (mounted) setState(() => _isLoadingRecordBooks = false);
     }
+  }
+
+  void _filterRecordBooks() {
+    if (_selectedContractTypeId == null) {
+      setState(() {
+        _filteredRecordBooks = [];
+        _selectedRecordBook = null;
+        _clearBookControllers();
+      });
+      return;
+    }
+
+    final hYear = _documentDateHijri.hYear;
+    final hMonth = _documentDateHijri.hMonth;
+    
+    // Check if contract type is Agency/Division
+    bool isSpecialType = false;
+    if (_selectedContractType != null) {
+        final name = _selectedContractType!['name'] ?? '';
+        isSpecialType = name.contains('وكال') || name.contains('قسم');
+    }
+
+    bool allowDispositions = false;
+    if (isSpecialType) {
+        // Pre-1447: Must use Dispositions (according to user: "يتم اختيار سجل التصرفات للثلاثة أنواع")
+        // Q1 1447: Allow both
+        if (hYear < 1447) {
+            allowDispositions = true; 
+        } else if (hYear == 1447 && hMonth <= 3) {
+            allowDispositions = true;
+        }
+    }
+
+    final filtered = _allRecordBooks.where((book) {
+       // 1. Exact match (Standard behavior)
+       // Use contractTypeId if available (from API), else fallback to name match if necessary, but ID is safer
+       if (book.contractTypeId == _selectedContractTypeId) return true;
+       
+       // 2. Dispositions Exception
+       if (allowDispositions) {
+          // Check if this book is 'Dispositions' (تصرفات)
+          // We rely on name usually containing 'تصرفات'
+          if (book.contractType.contains('تصرفات')) return true;
+       }
+       
+       return false;
+    }).toList();
+    
+    // Sort? Maybe show preferred one first?
+
+    setState(() {
+      _filteredRecordBooks = filtered;
+      
+      // Auto-Selection Logic
+      if (_filteredRecordBooks.length == 1) {
+         _selectedRecordBook = _filteredRecordBooks.first;
+         _updateBookControllers(_selectedRecordBook!);
+      } else if (_selectedRecordBook != null && !_filteredRecordBooks.contains(_selectedRecordBook)) {
+         // Existing selection is no longer valid
+         _selectedRecordBook = null;
+         _clearBookControllers();
+      } else if (_selectedRecordBook == null && _filteredRecordBooks.length > 1) {
+          // If multiple options (e.g. Q1 1447), don't auto-select? Or auto-select the "Correct" one?
+          // User said: "In Q1 1447, show both to let him choose". So don't auto-select if ambiguous.
+          // Unless one is clearly better.
+          // Let's leave it null to force user choice if multiple.
+      }
+    });
+  }
+
+  void _updateBookControllers(RecordBook book) {
+     // Populate default values from the selected book
+     // Since these are "grouped" books, 'number' might be a representative. 
+     // User can edit them.
+     
+     // Book Number: Use the book's number (or first of the group)
+     _bookNumberController.text = book.number.toString();
+     
+     // Entry Number: Estimate next number (total + 1)
+     _entryNumberController.text = (book.totalEntries + 1).toString();
+     
+     // Page Number: We don't have exact next page in index endpoint. Leave empty or 0.
+     // _pageNumberController.text = ''; 
+  }
+  
+  void _clearBookControllers() {
+     _bookNumberController.clear();
+     _entryNumberController.clear();
+     _pageNumberController.clear();
   }
 
   void _onContractTypeChanged(int? contractTypeId) {
@@ -234,8 +328,12 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     // Load form fields from FormFieldConfig API
     _loadFormFields(contractTypeId);
     
-    // Load record book info
-    _loadRecordBookInfo(contractTypeId);
+    // Load record book info logic
+    _fetchAllRecordBooks();
+    // Trigger filter explicitly in case data is already loaded
+    if (_allRecordBooks.isNotEmpty) {
+      _filterRecordBooks(); 
+    }
   }
 
   Future<void> _fetchSubtypes(int contractTypeId, {required int level, String? parentCode}) async {
@@ -444,6 +542,54 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       }
   }
 
+  Widget _buildRecordBookSelector() {
+    return Column(
+       crossAxisAlignment: CrossAxisAlignment.start,
+       children: [
+          if (_isLoadingRecordBooks) 
+             const Padding(padding: EdgeInsets.all(8.0), child: Center(child: CircularProgressIndicator())),
+          
+          if (!_isLoadingRecordBooks && _selectedContractTypeId != null) ...[
+             if (_filteredRecordBooks.isNotEmpty) ...[
+               const SizedBox(height: 16),
+               DropdownButtonFormField<RecordBook>(
+                  value: _selectedRecordBook,
+                  decoration: InputDecoration(
+                     labelText: 'السجل المطلوب *',
+                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                     prefixIcon: const Icon(Icons.book),
+                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
+                  items: _filteredRecordBooks.map((book) {
+                     return DropdownMenuItem<RecordBook>(
+                        value: book,
+                        child: Text(
+                          '${book.contractType} - ${book.title.isNotEmpty ? book.title : 'سجل رقم ${book.number}'}',
+                          style: GoogleFonts.tajawal(fontSize: 14),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                     );
+                  }).toList(),
+                  onChanged: (val) {
+                     setState(() {
+                        _selectedRecordBook = val;
+                        if (val != null) _updateBookControllers(val);
+                     });
+                  },
+                  validator: (v) => v == null ? 'يرجى اختيار السجل' : null,
+                  isExpanded: true,
+               ),
+             ] else ...[
+               const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Text('لا توجد سجلات متاحة لهذا النوع والتاريخ.', style: TextStyle(color: Colors.red)),
+               ),
+             ]
+          ],
+       ],
+    );
+  }
+
   Future<void> _pickDeliveryReceiptImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -457,9 +603,9 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedContractTypeId == null || _recordBookInfo == null) {
+    if (_selectedContractTypeId == null || _selectedRecordBook == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار نوع العقد')),
+        const SnackBar(content: Text('يرجى اختيار نوع العقد والسجل')),
       );
       return;
     }
@@ -484,7 +630,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
           'X-Auth-Token': token ?? '',
         },
         body: jsonEncode({
-          'record_book_id': _recordBookInfo!['id'],
+          'record_book_id': _selectedRecordBook!.id,
           'contract_type_id': _selectedContractTypeId,
           'subtype_1': _selectedSubtype1,
           'subtype_2': _selectedSubtype2,
@@ -539,7 +685,8 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
             setState(() {
               _selectedContractTypeId = null;
               _selectedContractType = null;
-              _recordBookInfo = null;
+              _selectedRecordBook = null;
+              _clearBookControllers();
               _formData.clear();
               _deliveryReceiptImage = null;
             });
@@ -712,11 +859,11 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                         ),
                         const SizedBox(height: 16),
                         
-                        // بيانات القيد في السجل
-                        if (_isLoadingRecordBook)
-                          const Center(child: CircularProgressIndicator())
-                        else if (_recordBookInfo != null)
-                          _buildRecordBookInfo(),
+                        // بيانات القيد في السجل - New Logic
+                        _buildRecordBookSelector(),
+                        
+                        if (_selectedRecordBook != null)
+                           _buildRecordBookInfo(),
                       ],
                     ),
                     
