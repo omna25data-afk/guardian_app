@@ -373,11 +373,40 @@ class _RecordBooksListState extends State<RecordBooksList> {
             .where((b) => _showArchive ? !b.isActive : b.isActive)
             .toList();
 
-        // 2. Group by Category
-        final categories = <String, int>{};
+        // 2. Group by Fixed 7 Categories
+        // Initialize with zeros
+        final categoryMaxNumbers = <String, int>{
+          'سجلات المبيع': 0,
+          'سجلات الزواج': 0,
+          'سجلات الطلاق': 0,
+          'سجلات الرجعة': 0,
+          'سجلات التصرفات': 0,
+          'سجلات القسمة': 0,
+          'سجلات الوكالات': 0,
+        };
+
+        // Helper to map API labels to our 7 categories
+        String getStandardCategory(String label) {
+          if (label.contains('مبيع') || label.contains('بيع')) return 'سجلات المبيع';
+          if (label.contains('زواج') || label.contains('نكاح')) return 'سجلات الزواج';
+          if (label.contains('طلاق')) return 'سجلات الطلاق';
+          if (label.contains('رجعة')) return 'سجلات الرجعة';
+          if (label.contains('تصرف') || label.contains('إقرار')) return 'سجلات التصرفات';
+          if (label.contains('قسمة') || label.contains('تركة')) return 'سجلات القسمة';
+          if (label.contains('وكال')) return 'سجلات الوكالات';
+          return 'أخرى'; // Fallback
+        }
+
+        // Process books to find Max Book Number per category
         for (var book in filteredBooks) {
-          categories[book.categoryLabel] =
-              (categories[book.categoryLabel] ?? 0) + 1;
+          final standardCat = getStandardCategory(book.categoryLabel);
+          if (categoryMaxNumbers.containsKey(standardCat)) {
+            // Parse book number (assuming it's numeric or string number)
+            int bookNum = int.tryParse(book.number.toString()) ?? 0;
+            if (bookNum > categoryMaxNumbers[standardCat]!) {
+              categoryMaxNumbers[standardCat] = bookNum;
+            }
+          }
         }
 
         return Column(
@@ -451,9 +480,9 @@ class _RecordBooksListState extends State<RecordBooksList> {
               child: RefreshIndicator(
                 onRefresh: () => provider.fetchRecordBooks(),
                 child: _selectedCategory == null
-                    ? _buildCategoriesGrid(categories)
+                    ? _buildCategoriesGrid(categoryMaxNumbers)
                     : _buildBooksList(filteredBooks
-                        .where((b) => b.categoryLabel == _selectedCategory)
+                        .where((b) => getStandardCategory(b.categoryLabel) == _selectedCategory)
                         .toList()),
               ),
             ),
@@ -464,25 +493,9 @@ class _RecordBooksListState extends State<RecordBooksList> {
   }
 
   Widget _buildCategoriesGrid(Map<String, int> categories) {
-    if (categories.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-                _showArchive
-                    ? Icons.inventory_2_outlined
-                    : Icons.folder_off_outlined,
-                size: 60,
-                color: Colors.grey[300]),
-            const SizedBox(height: 16),
-            Text(
-              _showArchive ? 'الأرشيف فارغ' : 'لا توجد سجلات نشطة',
-              style: GoogleFonts.tajawal(fontSize: 16, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      );
+    if (categories.values.every((v) => v == 0) && _showArchive) {
+       // Only show empty state if ALL are zero in Archive mode (Active mode usually shows categories even if empty)
+       // But user wanted 7 containers always potentially? Let's keep showing them.
     }
 
     return GridView.builder(
