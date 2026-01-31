@@ -173,7 +173,7 @@ class _RecordBookNotebooksScreenState extends State<RecordBookNotebooksScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
+                    color: Colors.green.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Text(
