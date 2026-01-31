@@ -8,6 +8,7 @@ import 'package:guardian_app/features/dashboard/data/models/dashboard_data.dart'
 import 'package:guardian_app/providers/record_book_provider.dart';
 import 'package:guardian_app/providers/registry_entry_provider.dart';
 import 'package:guardian_app/features/registry/presentation/add_entry_screen.dart';
+import 'package:guardian_app/features/registry/presentation/entry_details_screen.dart'; // Add Import
 import 'package:guardian_app/features/profile/presentation/profile_screen.dart';
 
 // --- Main HomeScreen (Shell) ---
@@ -373,11 +374,40 @@ class _RecordBooksListState extends State<RecordBooksList> {
             .where((b) => _showArchive ? !b.isActive : b.isActive)
             .toList();
 
-        // 2. Group by Category
-        final categories = <String, int>{};
+        // 2. Group by Fixed 7 Categories
+        // Initialize with zeros
+        final categoryMaxNumbers = <String, int>{
+          'سجلات المبيع': 0,
+          'سجلات الزواج': 0,
+          'سجلات الطلاق': 0,
+          'سجلات الرجعة': 0,
+          'سجلات التصرفات': 0,
+          'سجلات القسمة': 0,
+          'سجلات الوكالات': 0,
+        };
+
+        // Helper to map API labels to our 7 categories
+        String getStandardCategory(String label) {
+          if (label.contains('مبيع') || label.contains('بيع')) return 'سجلات المبيع';
+          if (label.contains('زواج') || label.contains('نكاح')) return 'سجلات الزواج';
+          if (label.contains('طلاق')) return 'سجلات الطلاق';
+          if (label.contains('رجعة')) return 'سجلات الرجعة';
+          if (label.contains('تصرف') || label.contains('إقرار')) return 'سجلات التصرفات';
+          if (label.contains('قسمة') || label.contains('تركة')) return 'سجلات القسمة';
+          if (label.contains('وكال')) return 'سجلات الوكالات';
+          return 'أخرى'; // Fallback
+        }
+
+        // Process books to find Max Book Number per category
         for (var book in filteredBooks) {
-          categories[book.categoryLabel] =
-              (categories[book.categoryLabel] ?? 0) + 1;
+          final standardCat = getStandardCategory(book.categoryLabel);
+          if (categoryMaxNumbers.containsKey(standardCat)) {
+            // Parse book number (assuming it's numeric or string number)
+            int bookNum = int.tryParse(book.number.toString()) ?? 0;
+            if (bookNum > categoryMaxNumbers[standardCat]!) {
+              categoryMaxNumbers[standardCat] = bookNum;
+            }
+          }
         }
 
         return Column(
@@ -451,9 +481,9 @@ class _RecordBooksListState extends State<RecordBooksList> {
               child: RefreshIndicator(
                 onRefresh: () => provider.fetchRecordBooks(),
                 child: _selectedCategory == null
-                    ? _buildCategoriesGrid(categories)
+                    ? _buildCategoriesGrid(categoryMaxNumbers)
                     : _buildBooksList(filteredBooks
-                        .where((b) => b.categoryLabel == _selectedCategory)
+                        .where((b) => getStandardCategory(b.categoryLabel) == _selectedCategory)
                         .toList()),
               ),
             ),
@@ -464,25 +494,9 @@ class _RecordBooksListState extends State<RecordBooksList> {
   }
 
   Widget _buildCategoriesGrid(Map<String, int> categories) {
-    if (categories.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-                _showArchive
-                    ? Icons.inventory_2_outlined
-                    : Icons.folder_off_outlined,
-                size: 60,
-                color: Colors.grey[300]),
-            const SizedBox(height: 16),
-            Text(
-              _showArchive ? 'الأرشيف فارغ' : 'لا توجد سجلات نشطة',
-              style: GoogleFonts.tajawal(fontSize: 16, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      );
+    if (categories.values.every((v) => v == 0) && _showArchive) {
+       // Only show empty state if ALL are zero in Archive mode (Active mode usually shows categories even if empty)
+       // But user wanted 7 containers always potentially? Let's keep showing them.
     }
 
     return GridView.builder(
@@ -682,6 +696,24 @@ class _RecordBooksListState extends State<RecordBooksList> {
                 ],
               ),
               const SizedBox(height: 16),
+              // Statistics Row
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildMiniStat(Icons.list_alt, '${book.totalEntries}', 'إجمالي', Colors.blue),
+                    _buildMiniStat(Icons.check_circle_outline, '${book.completedEntries}', 'موثق', Colors.green),
+                    _buildMiniStat(Icons.history_edu, '${book.draftEntries}', 'غير موثق', Colors.orange),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
               // Progress Section
               Row(
                 children: [
@@ -720,6 +752,27 @@ class _RecordBooksListState extends State<RecordBooksList> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildMiniStat(IconData icon, String value, String label, Color color) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 4),
+            Text(
+              value,
+              style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 16, color: color),
+            ),
+          ],
+        ),
+        Text(
+          label,
+          style: GoogleFonts.tajawal(fontSize: 12, color: Colors.grey[600]),
+        ),
+      ],
     );
   }
 }
@@ -946,40 +999,19 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
   }
 
   void _showEntryDetails(dynamic entry) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('تفاصيل القيد',
-            style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _detailRow('رقم القيد', '#${entry.serialNumber ?? "-"}'),
-              _detailRow('الطرف الأول', entry.firstParty),
-              _detailRow('الطرف الثاني', entry.secondParty),
-              _detailRow('نوع العقد', entry.contractType),
-              _detailRow('تاريخ الوثيقة', entry.dateHijri),
-              const Divider(),
-              _detailRow('حالة التوثيق', entry.statusLabel,
-                  color: entry.statusColor),
-              if (entry.deliveryStatusLabel != null)
-                _detailRow('حالة التسليم', entry.deliveryStatusLabel!,
-                    color: entry.deliveryStatusColor),
-              const Divider(),
-              _detailRow('الرسوم', '${entry.totalFees} ر.ي'),
-            ],
-          ),
+    if (entry.id == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EntryDetailsScreen(
+          entryId: entry.id!, // Make sure your Entry model has 'id'
+          entrySummary: entry, // Pass specific fields if needed
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('إغلاق', style: GoogleFonts.tajawal()),
-          ),
-        ],
       ),
-    );
+    ).then((_) {
+        // Refresh list when coming back
+         Provider.of<RegistryEntryProvider>(context, listen: false).fetchEntries();
+    });
   }
 
   Widget _detailRow(String label, String value, {Color? color}) {
