@@ -24,4 +24,9 @@ class ApiConstants {
   static String get contractTypes => "$_baseUrl/contract-types";
   static String myRecordBook(int contractTypeId) => "$_baseUrl/my-record-books/$contractTypeId";
   static String formFields(int contractTypeId) => "$_baseUrl/form-fields/$contractTypeId";
+  
+  // Physical Notebooks
+  static String get templates => "$_baseUrl/record-book-templates";
+  static String notebooks(int contractTypeId) => "$_baseUrl/record-books/$contractTypeId/notebooks";
+  static String get updateNotebook => "$_baseUrl/record-books/update-physical-notebook";
 }

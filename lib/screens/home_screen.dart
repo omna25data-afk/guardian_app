@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:guardian_app/features/records/presentation/screens/record_book_notebooks_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:guardian_app/widgets/stat_card.dart';
 import 'package:provider/provider.dart';
@@ -609,8 +610,21 @@ class _RecordBooksListState extends State<RecordBooksList> {
     return Icons.menu_book;
   }
 
+
+
   Widget _buildRecordBookCard(dynamic book) {
-    return Card(
+    return InkWell(
+      onTap: () {
+         if (book.contractTypeId != null) {
+           Navigator.push(context, MaterialPageRoute(
+              builder: (_) => RecordBookNotebooksScreen(
+                  contractTypeId: book.contractTypeId!, 
+                  contractTypeName: book.contractType
+              )
+           ));
+         }
+      },
+      child: Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
