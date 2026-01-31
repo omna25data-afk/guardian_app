@@ -8,11 +8,11 @@ class RegistryEntriesScreen extends StatelessWidget {
   final String title;
 
   const RegistryEntriesScreen({
-    Key? key,
+    super.key,
     this.bookNumber,
     this.contractTypeId,
     required this.title,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

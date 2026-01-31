@@ -553,7 +553,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
              if (_filteredRecordBooks.isNotEmpty) ...[
                const SizedBox(height: 16),
                DropdownButtonFormField<RecordBook>(
-                  value: _selectedRecordBook,
+                  initialValue: _selectedRecordBook,
                   decoration: InputDecoration(
                      labelText: 'السجل المطلوب *',
                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

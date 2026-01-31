@@ -14,10 +14,10 @@ class RecordBookNotebooksScreen extends StatefulWidget {
   final String contractTypeName;
 
   const RecordBookNotebooksScreen({
-    Key? key,
+    super.key,
     required this.contractTypeId,
     required this.contractTypeName,
-  }) : super(key: key);
+  });
 
   @override
   State<RecordBookNotebooksScreen> createState() => _RecordBookNotebooksScreenState();
@@ -216,17 +216,17 @@ class _RecordBookNotebooksScreenState extends State<RecordBookNotebooksScreen> {
                       }
                    },
                    itemBuilder: (ctx) => [
-                      PopupMenuItem(
+                      const PopupMenuItem(
                         value: 'view',
-                        child: Row(children: [Icon(Icons.visibility, size: 18), const SizedBox(width: 8), Text('عرض القيود')]),
+                        child: Row(children: [Icon(Icons.visibility, size: 18), SizedBox(width: 8), Text('عرض القيود')]),
                       ),
-                      PopupMenuItem(
-                        value: 'info',
-                        child: Row(children: [Icon(Icons.info_outline, size: 18), const SizedBox(width: 8), Text('معلومات السجل')]),
+                      const PopupMenuItem(
+                         value: 'info',
+                         child: Row(children: [Icon(Icons.info_outline, size: 18), SizedBox(width: 8), Text('معلومات السجل')]),
                       ),
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Row(children: [Icon(Icons.edit, size: 18), const SizedBox(width: 8), Text('تعديل البيانات')]),
+                      const PopupMenuItem(
+                         value: 'edit',
+                         child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('تعديل البيانات')]),
                       ),
                    ],
                 ),
@@ -266,11 +266,11 @@ class EditNotebookDialog extends StatefulWidget {
   final VoidCallback onSave;
 
   const EditNotebookDialog({
-    Key? key, 
+    super.key, 
     required this.notebook, 
     required this.contractTypeId, 
     required this.onSave
-  }) : super(key: key);
+  });
 
   @override
   State<EditNotebookDialog> createState() => _EditNotebookDialogState();
@@ -357,10 +357,14 @@ class _EditNotebookDialogState extends State<EditNotebookDialog> {
        if (response.statusCode == 200) {
           widget.onSave();
        } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل التحديث')));
+          if (mounted) {
+             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل التحديث')));
+          }
        }
      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+        }
      } finally {
         if (mounted) setState(() => _isSaving = false);
      }
@@ -399,7 +403,7 @@ class _EditNotebookDialogState extends State<EditNotebookDialog> {
                 _isLoadingTemplates 
                    ? const Center(child: CircularProgressIndicator())
                    : DropdownButtonFormField<int>(
-                       value: _selectedTemplateId,
+                       initialValue: _selectedTemplateId,
                        decoration: const InputDecoration(
                           labelText: 'القالب',
                           border: OutlineInputBorder(),
