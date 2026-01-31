@@ -201,7 +201,7 @@ class _RecordBookNotebooksScreenState extends State<RecordBookNotebooksScreen> {
                 ),
                 PopupMenuButton<String>(
                    onSelected: (v) {
-                      } else if (v == 'edit') {
+                      if (v == 'edit') {
                          _openEditDialog(book);
                       } else if (v == 'info') {
                          _showInfoDialog(book);
@@ -218,15 +218,15 @@ class _RecordBookNotebooksScreenState extends State<RecordBookNotebooksScreen> {
                    itemBuilder: (ctx) => [
                       PopupMenuItem(
                         value: 'view',
-                        child: Row(children: [Icon(Icons.visibility, size: 18), SizedBox(width: 8), Text('عرض القيود')]),
+                        child: Row(children: [Icon(Icons.visibility, size: 18), const SizedBox(width: 8), Text('عرض القيود')]),
                       ),
                       PopupMenuItem(
                         value: 'info',
-                        child: Row(children: [Icon(Icons.info_outline, size: 18), SizedBox(width: 8), Text('معلومات السجل')]),
+                        child: Row(children: [Icon(Icons.info_outline, size: 18), const SizedBox(width: 8), Text('معلومات السجل')]),
                       ),
                       PopupMenuItem(
                         value: 'edit',
-                        child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('تعديل البيانات')]),
+                        child: Row(children: [Icon(Icons.edit, size: 18), const SizedBox(width: 8), Text('تعديل البيانات')]),
                       ),
                    ],
                 ),
@@ -324,7 +324,6 @@ class _EditNotebookDialogState extends State<EditNotebookDialog> {
         }
       }
     } catch (e) {
-       // Handle error
        if (mounted) setState(() => _isLoadingTemplates = false);
     }
   }
@@ -358,7 +357,6 @@ class _EditNotebookDialogState extends State<EditNotebookDialog> {
        if (response.statusCode == 200) {
           widget.onSave();
        } else {
-          // Error
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل التحديث')));
        }
      } catch (e) {

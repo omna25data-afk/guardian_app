@@ -763,10 +763,11 @@ class _RecordBooksListState extends State<RecordBooksList> {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
+          ), // Column
+        ), // Padding
+      ), // Container
+    ), // Card
+    ); // InkWell
   }
 
   Widget _buildMiniStat(IconData icon, String value, String label, Color color) {
