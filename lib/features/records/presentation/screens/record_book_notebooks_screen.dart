@@ -210,6 +210,7 @@ class _RecordBookNotebooksScreenState extends State<RecordBookNotebooksScreen> {
                          Navigator.push(context, MaterialPageRoute(
                             builder: (context) => RegistryEntriesScreen(
                                bookNumber: book.bookNumber,
+                               recordBookId: book.id,
                                contractTypeId: widget.contractTypeId,
                                title: 'قيود الدفتر رقم ${book.bookNumber}',
                             ),

@@ -4,12 +4,14 @@ import 'package:guardian_app/screens/home_screen.dart'; // To use RegistryEntrie
 
 class RegistryEntriesScreen extends StatelessWidget {
   final int? bookNumber;
+  final int? recordBookId;
   final int? contractTypeId;
   final String title;
 
   const RegistryEntriesScreen({
     super.key,
     this.bookNumber,
+    this.recordBookId,
     this.contractTypeId,
     required this.title,
   });
@@ -27,6 +29,7 @@ class RegistryEntriesScreen extends StatelessWidget {
       ),
       body: RegistryEntriesList(
         bookNumber: bookNumber,
+        recordBookId: recordBookId,
         contractTypeId: contractTypeId,
       ),
     );

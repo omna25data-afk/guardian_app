@@ -879,11 +879,13 @@ class _RecordBooksListState extends State<RecordBooksList> {
 // --- Widget for displaying Registry Entries as Table ---
 class RegistryEntriesList extends StatefulWidget {
   final int? bookNumber;
+  final int? recordBookId;
   final int? contractTypeId;
 
   const RegistryEntriesList({
     super.key, 
     this.bookNumber, 
+    this.recordBookId,
     this.contractTypeId,
   });
 
@@ -905,6 +907,7 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
   void _fetchData() {
     Provider.of<RegistryEntryProvider>(context, listen: false).fetchEntries(
       bookNumber: widget.bookNumber,
+      recordBookId: widget.recordBookId,
       contractTypeId: _filterContractTypeId ?? widget.contractTypeId,
       status: _filterStatus,
       hijriYear: _filterHijriYear,
