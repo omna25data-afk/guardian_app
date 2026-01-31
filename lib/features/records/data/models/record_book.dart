@@ -17,44 +17,26 @@ class RecordBook {
   final int completedEntries;
   final int draftEntries;
   final int notebooksCount;
-  final int? contractTypeId;
-  
+  final int bookNumber;
+  final int entriesCount;
+  final String? ministryRecordNumber;
+  final int? templateId;
+  final String? templateName;
+  final int? issuanceYear;
+  final List<int> years;
+
   RecordBook({
-    required this.id,
-    required this.number,
-    required this.title,
-    required this.hijriYear,
-    required this.statusLabel,
-    required this.contractType,
-    required this.totalPages,
-    required this.usedPages,
-    required this.usagePercentage,
-    required this.categoryLabel,
-    required this.isActive,
-    this.totalEntries = 0,
-    this.completedEntries = 0,
-    this.draftEntries = 0,
-    this.notebooksCount = 1,
-    this.contractTypeId,
+    required this.bookNumber,
+    required this.entriesCount,
+    this.ministryRecordNumber,
+    this.templateId,
+    this.templateName,
+    this.issuanceYear,
+    required this.years,
   });
 
   factory RecordBook.fromJson(Map<String, dynamic> json) {
     return RecordBook(
-      id: json['id'],
-      number: json['book_number'] ?? 0,
-      title: json['name'] ?? '',
-      hijriYear: json['hijri_year'] ?? 0,
-      statusLabel: json['status_label'] ?? '',
-      contractType: json['contract_type_name'] ?? json['type_name'] ?? '',
-      totalPages: json['total_pages'] ?? 0,
-      usedPages: json['constraints_count'] ?? 0,
-      usagePercentage: json['used_percentage'] ?? 0,
-      categoryLabel: json['category_label'] ?? 'سجلات عامة',
-      isActive: json['is_active'] == true || json['is_active'] == 1,
-      totalEntries: json['total_entries_count'] ?? json['constraints_count'] ?? 0,
-      completedEntries: json['completed_entries_count'] ?? 0,
-      draftEntries: json['draft_entries_count'] ?? 0,
-      notebooksCount: json['notebooks_count'] ?? 1,
       contractTypeId: json['contract_type_id'],
     );
   }

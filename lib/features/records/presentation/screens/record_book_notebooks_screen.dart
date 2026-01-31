@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:guardian_app/core/constants/api_constants.dart';
 import 'package:guardian_app/features/auth/data/repositories/auth_repository.dart';
-import 'package:guardian_app/features/records/data/models/physical_notebook.dart';
+import 'package:guardian_app/features/records/data/models/record_book.dart'; // Updated import
 import 'package:guardian_app/features/records/data/models/record_book_template.dart';
 import 'package:guardian_app/features/registry/presentation/registry_entries_screen.dart';
 
@@ -25,7 +25,7 @@ class RecordBookNotebooksScreen extends StatefulWidget {
 
 class _RecordBookNotebooksScreenState extends State<RecordBookNotebooksScreen> {
   bool _isLoading = true;
-  List<PhysicalNotebook> _notebooks = [];
+  List<RecordBook> _notebooks = []; // Updated type
 
   @override
   void initState() {
@@ -50,8 +50,8 @@ class _RecordBookNotebooksScreenState extends State<RecordBookNotebooksScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
         setState(() {
-          _notebooks = List<PhysicalNotebook>.from(
-              data['data'].map((x) => PhysicalNotebook.fromJson(x)));
+          _notebooks = List<RecordBook>.from(
+              data['data'].map((x) => RecordBook.fromJson(x)));
           _isLoading = false;
         });
       } else {
@@ -62,7 +62,7 @@ class _RecordBookNotebooksScreenState extends State<RecordBookNotebooksScreen> {
     }
   }
 
-  void _showInfoDialog(PhysicalNotebook notebook) {
+  void _showInfoDialog(RecordBook notebook) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -118,7 +118,7 @@ class _RecordBookNotebooksScreenState extends State<RecordBookNotebooksScreen> {
     }
   }
 
-  void _openEditDialog(PhysicalNotebook notebook) {
+  void _openEditDialog(RecordBook notebook) {
     showDialog(
       context: context,
       builder: (ctx) => EditNotebookDialog(
@@ -159,7 +159,7 @@ class _RecordBookNotebooksScreenState extends State<RecordBookNotebooksScreen> {
     );
   }
 
-  Widget _buildNotebookCard(PhysicalNotebook book) {
+  Widget _buildNotebookCard(RecordBook book) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -261,7 +261,7 @@ class _RecordBookNotebooksScreenState extends State<RecordBookNotebooksScreen> {
 }
 
 class EditNotebookDialog extends StatefulWidget {
-  final PhysicalNotebook notebook;
+  final RecordBook notebook;
   final int contractTypeId;
   final VoidCallback onSave;
 
