@@ -14,6 +14,10 @@ class RegistryRepository {
     String? searchQuery,
     int? bookNumber,
     int? contractTypeId,
+    int? hijriYear,
+    int? hijriMonth,
+    String? sortBy,
+    String? sortOrder,
   }) async {
     final token = await authRepository.getToken();
     var queryParams = {
@@ -21,6 +25,10 @@ class RegistryRepository {
       'search': searchQuery,
       'book_number': bookNumber?.toString(),
       'contract_type_id': contractTypeId?.toString(),
+      'hijri_year': hijriYear?.toString(),
+      'hijri_month': hijriMonth?.toString(),
+      'sort_by': sortBy,
+      'sort_order': sortOrder,
     };
     queryParams.removeWhere((key, value) => value == null);
 

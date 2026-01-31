@@ -11,6 +11,11 @@ import 'package:guardian_app/providers/registry_entry_provider.dart';
 import 'package:guardian_app/features/registry/presentation/add_entry_screen.dart';
 import 'package:guardian_app/features/registry/presentation/entry_details_screen.dart'; // Add Import
 import 'package:guardian_app/features/profile/presentation/profile_screen.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:guardian_app/core/constants/api_constants.dart';
+import 'package:guardian_app/features/auth/data/repositories/auth_repository.dart';
+import 'package:guardian_app/features/registry/data/models/registry_entry.dart';
 
 // --- Main HomeScreen (Shell) ---
 class HomeScreen extends StatefulWidget {
@@ -808,18 +813,55 @@ class RegistryEntriesList extends StatefulWidget {
 }
 
 class _RegistryEntriesListState extends State<RegistryEntriesList> {
-  String _sortBy = 'date';
+  String _sortBy = 'document_gregorian_date';
   bool _sortAscending = false;
   String? _filterStatus;
+  int? _filterHijriYear;
+  int? _filterHijriMonth;
+  int? _filterContractTypeId;
+  List<Map<String, dynamic>> _contractTypes = [];
+  
+  String _groupBy = 'none'; // 'none', 'month', 'status', 'contract_type'
+
+  void _fetchData() {
+    Provider.of<RegistryEntryProvider>(context, listen: false).fetchEntries(
+      bookNumber: widget.bookNumber,
+      contractTypeId: _filterContractTypeId ?? widget.contractTypeId,
+      status: _filterStatus,
+      hijriYear: _filterHijriYear,
+      hijriMonth: _filterHijriMonth,
+      sortBy: _sortBy,
+      sortOrder: _sortAscending ? 'asc' : 'desc',
+    );
+  }
+
+  Future<void> _loadContractTypes() async {
+    try {
+      final authRepo = Provider.of<AuthRepository>(context, listen: false);
+      final token = await authRepo.getToken();
+      final response = await http.get(
+        Uri.parse(ApiConstants.contractTypes),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+          'X-Auth-Token': token ?? '',
+        },
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        if (mounted) setState(() => _contractTypes = data.cast<Map<String, dynamic>>());
+      }
+    } catch (e) {
+      debugPrint('Error loading contract types: $e');
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<RegistryEntryProvider>(context, listen: false).fetchEntries(
-        bookNumber: widget.bookNumber,
-        contractTypeId: widget.contractTypeId,
-      );
+      _fetchData();
+      _loadContractTypes();
     });
   }
 
@@ -834,68 +876,112 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
           return Center(child: Text(provider.errorMessage!));
         }
 
-        // Filter and sort entries
-        var entries = provider.entries.toList();
-        if (_filterStatus != null) {
-          entries =
-              entries.where((e) => e.statusLabel == _filterStatus).toList();
+        final entries = provider.entries;
+        
+        // Logical Grouping
+        Map<String, List<RegistryEntry>> groupedEntries = {};
+        if (_groupBy == 'none') {
+           groupedEntries['الكل'] = entries;
+        } else {
+           for (var entry in entries) {
+              String key = 'أخرى';
+              if (_groupBy == 'month') {
+                 final parts = entry.dateHijri.split('-');
+                 if (parts.length >= 2) {
+                    final year = parts[0];
+                    final month = int.tryParse(parts[1]) ?? 1;
+                    final monthNames = [
+                      '', 'محرم', 'صفر', 'ربيع الأول', 'ربيع الآخر', 'جمادى الأولى', 'جمادى الآخرة',
+                      'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'
+                    ];
+                    key = '${monthNames[month]} $year هـ';
+                 }
+              } else if (_groupBy == 'status') {
+                 key = entry.statusLabel;
+              } else if (_groupBy == 'contract_type') {
+                 key = entry.contractType;
+              }
+              groupedEntries.putIfAbsent(key, () => []).add(entry);
+           }
         }
 
         return Column(
           children: [
-            // Sort/Filter Bar
+            // Advanced Filter & Grouping Bar
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              color: Colors.grey[100],
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))
+                ]
+              ),
               child: Row(
                 children: [
-                  // Sort dropdown
+                  // Grouping Selector
                   DropdownButton<String>(
-                    value: _sortBy,
+                    value: _groupBy,
+                    icon: const Icon(Icons.layers, size: 20),
                     underline: const SizedBox(),
                     items: const [
-                      DropdownMenuItem(value: 'date', child: Text('التاريخ')),
-                      DropdownMenuItem(value: 'status', child: Text('الحالة')),
+                       DropdownMenuItem(value: 'none', child: Text('بدون تجميع')),
+                       DropdownMenuItem(value: 'month', child: Text('بالشهر')),
+                       DropdownMenuItem(value: 'status', child: Text('بالحالة')),
+                       DropdownMenuItem(value: 'contract_type', child: Text('بنوع العقد')),
                     ],
-                    onChanged: (v) => setState(() => _sortBy = v!),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                        _sortAscending
-                            ? Icons.arrow_upward
-                            : Icons.arrow_downward,
-                        size: 18),
-                    onPressed: () =>
-                        setState(() => _sortAscending = !_sortAscending),
+                    onChanged: (v) => setState(() => _groupBy = v!),
+                    style: GoogleFonts.tajawal(color: Colors.black87, fontSize: 13),
                   ),
                   const Spacer(),
-                  // Filter chips
-                  FilterChip(
-                    label: const Text('الكل'),
-                    selected: _filterStatus == null,
-                    onSelected: (_) => setState(() => _filterStatus = null),
+                  // Sort Icon
+                  IconButton(
+                    icon: Icon(_sortAscending ? Icons.sort_by_alpha : Icons.sort, size: 22, color: const Color(0xFF006400)),
+                    onPressed: () {
+                       setState(() => _sortAscending = !_sortAscending);
+                       _fetchData();
+                    },
+                    tooltip: 'ترتيب',
                   ),
-                  const SizedBox(width: 8),
-                  FilterChip(
-                    label: const Text('مسودة'),
-                    selected: _filterStatus == 'مسودة',
-                    onSelected: (_) => setState(() => _filterStatus =
-                        _filterStatus == 'مسودة' ? null : 'مسودة'),
+                  // Filter Button
+                  IconButton(
+                    icon: Icon(
+                      Icons.filter_list, 
+                      color: (_filterStatus != null || _filterHijriYear != null || _filterContractTypeId != null) 
+                        ? Colors.blue 
+                        : const Color(0xFF006400)
+                    ),
+                    onPressed: _showFilterSheet,
+                    tooltip: 'فلترة متقدمة',
                   ),
                 ],
               ),
             ),
-            // Entries Table
+
+            // Entries List with Group Headers
             Expanded(
               child: RefreshIndicator(
-                onRefresh: () => provider.fetchEntries(),
-                child: ListView.separated(
+                onRefresh: () async => _fetchData(),
+                child: ListView.builder(
                   padding: const EdgeInsets.all(12),
-                  itemCount: entries.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final entry = entries[index];
-                    return _buildEntryCard(entry);
+                  itemCount: groupedEntries.length,
+                  itemBuilder: (context, groupIndex) {
+                    final groupKey = groupedEntries.keys.elementAt(groupIndex);
+                    final groupItems = groupedEntries[groupKey]!;
+                    
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_groupBy != 'none')
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16, bottom: 8, right: 8),
+                            child: Text(
+                              groupKey,
+                              style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, color: const Color(0xFF006400), fontSize: 15),
+                            ),
+                          ),
+                        ...groupItems.map((entry) => _buildEntryCard(entry)),
+                      ],
+                    );
                   },
                 ),
               ),
@@ -906,7 +992,160 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
     );
   }
 
-  Widget _buildEntryCard(dynamic entry) {
+  void _showFilterSheet() {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            left: 20, right: 20, top: 20
+          ),
+          child: StatefulBuilder(
+            builder: (context, setModalState) => Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                         Text('فلترة متقدمة', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold)),
+                         IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                      ],
+                   ),
+                   const Divider(),
+                   
+                   // Status Filter
+                   Text('حالة القيد', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 14)),
+                   const SizedBox(height: 8),
+                   Wrap(
+                      spacing: 8,
+                      children: [
+                         {'label': 'الكل', 'value': null},
+                         {'label': 'مسودة', 'value': 'draft'},
+                         {'label': 'مسجل', 'value': 'registered_guardian'},
+                         {'label': 'بانتظار التوثيق', 'value': 'pending_documentation'},
+                         {'label': 'موثق', 'value': 'documented'},
+                      ].map((s) {
+                         bool isSelected = _filterStatus == s['value'];
+                         return FilterChip(
+                            label: Text(s['label'] as String, style: TextStyle(
+                              fontSize: 12, 
+                              color: isSelected ? Colors.white : Colors.black87
+                            )),
+                            selected: isSelected,
+                            selectedColor: const Color(0xFF006400),
+                            checkmarkColor: Colors.white,
+                            onSelected: (sel) => setModalState(() => _filterStatus = sel ? s['value'] as String? : null),
+                         );
+                      }).toList(),
+                   ),
+                   const SizedBox(height: 16),
+
+                   // Hijri Year Filter
+                   Row(
+                     children: [
+                       Expanded(
+                         child: Column(
+                           crossAxisAlignment: CrossAxisAlignment.start,
+                           children: [
+                             Text('السنة الهجرية', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 14)),
+                             DropdownButton<int?>(
+                                isExpanded: true,
+                                value: _filterHijriYear,
+                                items: [null, 1443, 1444, 1445, 1446, 1447].map((y) => DropdownMenuItem(
+                                  value: y, 
+                                  child: Text(y == null ? 'الكل' : '$y هـ')
+                                )).toList(),
+                                onChanged: (v) => setModalState(() => _filterHijriYear = v),
+                             ),
+                           ],
+                         ),
+                       ),
+                       const SizedBox(width: 16),
+                       Expanded(
+                         child: Column(
+                           crossAxisAlignment: CrossAxisAlignment.start,
+                           children: [
+                             Text('الشهر الهجري', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 14)),
+                             DropdownButton<int?>(
+                                isExpanded: true,
+                                value: _filterHijriMonth,
+                                items: [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => DropdownMenuItem(
+                                  value: m, 
+                                  child: Text(m == null ? 'الكل' : 'شهر $m')
+                                )).toList(),
+                                onChanged: (v) => setModalState(() => _filterHijriMonth = v),
+                             ),
+                           ],
+                         ),
+                       ),
+                     ],
+                   ),
+                   const SizedBox(height: 16),
+
+                   // Contract Type Filter
+                   Text('نوع العقد', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 14)),
+                   DropdownButton<int?>(
+                      isExpanded: true,
+                      value: _filterContractTypeId,
+                      items: [
+                         const DropdownMenuItem<int?>(value: null, child: Text('الكل')),
+                         ..._contractTypes.map((t) => DropdownMenuItem<int?>(
+                            value: t['id'] as int,
+                            child: Text(t['name'] as String),
+                         )),
+                      ],
+                      onChanged: (v) => setModalState(() => _filterContractTypeId = v),
+                   ),
+                   
+                   const SizedBox(height: 24),
+                   Row(
+                     children: [
+                       Expanded(
+                         child: OutlinedButton(
+                           onPressed: () {
+                              setModalState(() {
+                                 _filterStatus = null;
+                                 _filterHijriYear = null;
+                                 _filterHijriMonth = null;
+                                 _filterContractTypeId = null;
+                              });
+                           },
+                           child: const Text('مسح الكل'),
+                         ),
+                       ),
+                       const SizedBox(width: 12),
+                       Expanded(
+                         flex: 2,
+                         child: ElevatedButton(
+                            onPressed: () {
+                               Navigator.pop(context);
+                               _fetchData();
+                            },
+                            style: ElevatedButton.styleFrom(
+                               backgroundColor: const Color(0xFF006400),
+                               padding: const EdgeInsets.symmetric(vertical: 15),
+                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+                            ),
+                            child: Text('تطبيق الفلترة', style: GoogleFonts.tajawal(color: Colors.white, fontWeight: FontWeight.bold)),
+                         ),
+                       ),
+                     ],
+                   ),
+                ],
+              ),
+          ),
+        ),
+      );
+  }
+
+  Widget _buildEntryCard(RegistryEntry entry) {
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
@@ -1024,7 +1263,7 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
     );
   }
 
-  void _showEntryDetails(dynamic entry) {
+  void _showEntryDetails(RegistryEntry entry) {
     if (entry.id == null) return;
     Navigator.push(
       context,

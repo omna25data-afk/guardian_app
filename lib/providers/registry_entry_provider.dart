@@ -24,6 +24,10 @@ class RegistryEntryProvider with ChangeNotifier {
     String? searchQuery,
     int? bookNumber,
     int? contractTypeId,
+    int? hijriYear,
+    int? hijriMonth,
+    String? sortBy,
+    String? sortOrder,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -35,6 +39,10 @@ class RegistryEntryProvider with ChangeNotifier {
         searchQuery: searchQuery,
         bookNumber: bookNumber,
         contractTypeId: contractTypeId,
+        hijriYear: hijriYear,
+        hijriMonth: hijriMonth,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
       );
     } catch (e) {
       _errorMessage = e.toString();

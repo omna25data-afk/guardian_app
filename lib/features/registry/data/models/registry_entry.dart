@@ -10,9 +10,10 @@ class RegistryEntry {
   final String dateHijri;
   final String dateGregorian;
   final double totalFees;
+  final int? hijriYear;
   final String? deliveryStatusLabel;
-  final String? statusColorStr; // New
-  final String? deliveryStatusColorStr; // New
+  final String? statusColorStr;
+  final String? deliveryStatusColorStr;
 
   RegistryEntry({
     this.id,
@@ -23,6 +24,7 @@ class RegistryEntry {
     required this.contractType,
     required this.dateHijri,
     required this.dateGregorian,
+    this.hijriYear,
     required this.totalFees,
     this.deliveryStatusLabel,
     this.statusColorStr,
@@ -38,6 +40,7 @@ class RegistryEntry {
     return RegistryEntry(
       id: json['id'],
       serialNumber: json['serial_number'],
+      hijriYear: json['hijri_year'],
       statusLabel: json['status_label'] ?? '',
       statusColorStr: json['status_color'], // Parsing backend color
       deliveryStatusLabel: json['delivery_status_label'],
