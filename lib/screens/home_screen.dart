@@ -562,7 +562,7 @@ class _RecordBooksListState extends State<RecordBooksList> {
                 child: _selectedCategory == null
                     ? _buildCategoriesGrid(categoryMaxNumbers)
                     : _buildBooksList(filteredBooks
-                        .where((b) => getStandardCategory(b.contractType ?? '') == _selectedCategory)
+                        .where((b) => getStandardCategory(b.contractType) == _selectedCategory)
                         .toList()),
               ),
             ),

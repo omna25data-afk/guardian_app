@@ -249,7 +249,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
        // 2. Dispositions Exception
        if (allowDispositions) {
           // Check if this book is 'Dispositions' (تصرفات)
-          if (book.contractType!.contains('تصرفات')) return true;
+          if (book.contractType.contains('تصرفات')) return true;
        }
        
        return false;
