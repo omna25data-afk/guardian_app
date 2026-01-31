@@ -400,7 +400,9 @@ class _RecordBooksListState extends State<RecordBooksList> {
 
         // Process books to find Max Book Number per category
         for (var book in filteredBooks) {
-          final standardCat = getStandardCategory(book.categoryLabel);
+          // Use contractType instead of categoryLabel because categoryLabel is generic (e.g. "Guardian Recording")
+          // while contractType holds the specific type (e.g. "Marriage Contract")
+          final standardCat = getStandardCategory(book.contractType);
           if (categoryMaxNumbers.containsKey(standardCat)) {
             // Parse book number (assuming it's numeric or string number)
             int bookNum = int.tryParse(book.number.toString()) ?? 0;
