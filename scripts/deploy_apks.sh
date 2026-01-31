@@ -9,6 +9,7 @@ echo -e "${GREEN}=== Starting Automated Deployment ===${NC}"
 # 1. Update Code
 echo -e "${GREEN}1. Pulling latest code...${NC}"
 git pull origin main
+flutter clean
 flutter pub get
 
 # 2. Clean previous builds
