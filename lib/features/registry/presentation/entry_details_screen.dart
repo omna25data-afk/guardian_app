@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/constants/api_constants.dart';
 import 'package:guardian_app/features/registry/presentation/add_entry_screen.dart'; // Correct import path
-import 'package:guardian_app/providers/registry_entry_provider.dart'; // Add Provider Import
 
 class EntryDetailsScreen extends StatefulWidget {
   final int entryId;
@@ -85,7 +83,7 @@ class _EntryDetailsScreenState extends State<EntryDetailsScreen> {
     setState(() => _isRequestingDoc = true);
     
     try {
-      final storage = const FlutterSecureStorage();
+      const storage = FlutterSecureStorage();
       final token = await storage.read(key: 'auth_token');
 
       final response = await http.put(

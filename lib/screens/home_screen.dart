@@ -1010,7 +1010,9 @@ class _RegistryEntriesListState extends State<RegistryEntriesList> {
       ),
     ).then((_) {
         // Refresh list when coming back
-         Provider.of<RegistryEntryProvider>(context, listen: false).fetchEntries();
+        if (mounted) {
+           Provider.of<RegistryEntryProvider>(context, listen: false).fetchEntries();
+        }
     });
   }
 
