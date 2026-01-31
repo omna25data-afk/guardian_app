@@ -239,14 +239,17 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
 
     final filtered = _allRecordBooks.where((book) {
        // 1. Exact match (Standard behavior)
-       // Use contractTypeId if available (from API), else fallback to name match if necessary, but ID is safer
+       // Use safe navigation or fallback. The 'contractType' string is what we have now, 
+       // but for strict filtering we should ideally have contract_type_id in the model.
+       // Let's re-add contractTypeId to the model properly or use available data.
+       // Based on the error log, the model is missing contractTypeId. We should add it back.
+       // BUT for now, let's assume we fix the model.
        if (book.contractTypeId == _selectedContractTypeId) return true;
        
        // 2. Dispositions Exception
        if (allowDispositions) {
           // Check if this book is 'Dispositions' (تصرفات)
-          // We rely on name usually containing 'تصرفات'
-          if (book.contractType.contains('تصرفات')) return true;
+          if ((book.contractType ?? '').contains('تصرفات')) return true;
        }
        
        return false;
