@@ -326,7 +326,7 @@ class _AddEditGuardianScreenState extends State<AddEditGuardianScreen> {
               const SizedBox(height: 24),
               _buildSectionTitle('بيانات الهوية'),
               DropdownButtonFormField<String>(
-                value: _proofType,
+                initialValue: _proofType,
                 decoration: const InputDecoration(labelText: 'نوع الإثبات'),
                 items: const [
                   DropdownMenuItem(value: 'بطاقة شخصية', child: Text('بطاقة شخصية')),
@@ -395,7 +395,7 @@ class _AddEditGuardianScreenState extends State<AddEditGuardianScreen> {
               const SizedBox(height: 24),
               _buildSectionTitle('الحالة الوظيفية'),
               DropdownButtonFormField<String>(
-                value: _employmentStatus,
+                initialValue: _employmentStatus,
                 decoration: const InputDecoration(labelText: 'الحالة'),
                 items: const [
                   DropdownMenuItem(value: 'على رأس العمل', child: Text('على رأس العمل')),
