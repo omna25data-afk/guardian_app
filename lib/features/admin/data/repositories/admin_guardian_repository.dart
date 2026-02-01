@@ -53,7 +53,7 @@ class AdminGuardianRepository {
       throw Exception('Failed to load guardians: ${response.statusCode}');
     }
   }
-  Future<void> createGuardian(Map<String, String> data, {String? imagePath}) async {
+  Future<void> createGuardian(Map<String, dynamic> data, {String? imagePath}) async {
     final token = await _authRepository.getToken();
     final uri = Uri.parse('${ApiConstants.baseUrl}/guardians');
     
@@ -63,7 +63,7 @@ class AdminGuardianRepository {
       'Accept': 'application/json',
     });
     
-    request.fields.addAll(data);
+    _addFieldsToRequest(request, data);
     
     if (imagePath != null) {
       request.files.add(await http.MultipartFile.fromPath('personal_photo', imagePath));
@@ -77,20 +77,17 @@ class AdminGuardianRepository {
     }
   }
 
-  Future<void> updateGuardian(int id, Map<String, String> data, {String? imagePath}) async {
+  Future<void> updateGuardian(int id, Map<String, dynamic> data, {String? imagePath}) async {
     final token = await _authRepository.getToken();
     final uri = Uri.parse('${ApiConstants.baseUrl}/guardians/$id');
     
-    // For update (PUT/PATCH) with files, often need POST with _method=PUT or specific handling
-    // Laravel/Spatie usually handles standard POST or PUT. PHP sometimes has issues with PUT + Multipart.
-    // Safe bet: POST with _method = PUT
     final request = http.MultipartRequest('POST', uri);
     request.headers.addAll({
       'Authorization': 'Bearer $token',
       'Accept': 'application/json',
     });
     
-    request.fields.addAll(data);
+    _addFieldsToRequest(request, data);
     request.fields['_method'] = 'PUT'; // Laravel trick for PUT multipart
     
     if (imagePath != null) {
@@ -103,6 +100,18 @@ class AdminGuardianRepository {
     if (response.statusCode != 200) {
       throw Exception('Failed to update guardian: ${response.body}');
     }
+  }
+
+  void _addFieldsToRequest(http.MultipartRequest request, Map<String, dynamic> data) {
+    data.forEach((key, value) {
+      if (value is List) {
+        for (var i = 0; i < value.length; i++) {
+          request.fields['$key[$i]'] = value[i].toString();
+        }
+      } else if (value != null) {
+        request.fields[key] = value.toString();
+      }
+    });
   }
 
   Future<void> deleteGuardian(int id) async {

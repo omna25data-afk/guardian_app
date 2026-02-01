@@ -9,7 +9,7 @@ class AdminAreasRepository {
 
   AdminAreasRepository({required this.baseUrl});
 
-  Future<List<AdminArea>> getAreas({int page = 1, String? searchQuery}) async {
+  Future<List<AdminArea>> getAreas({int page = 1, String? searchQuery, String? type}) async {
     final token = await _storage.read(key: 'auth_token');
     
     // Construct query parameters
@@ -19,6 +19,11 @@ class AdminAreasRepository {
     if (searchQuery != null && searchQuery.isNotEmpty) {
       queryParams['filter[name]'] = searchQuery;
     }
+    if (type != null) {
+      queryParams['filter[type]'] = type;
+    }
+    // Only active areas
+    queryParams['filter[is_active]'] = '1';
 
     final uri = Uri.parse('$baseUrl/geographic-areas').replace(queryParameters: queryParams);
 
@@ -42,4 +47,8 @@ class AdminAreasRepository {
       throw Exception('Error fetching areas: $e');
     }
   }
+
+  Future<List<AdminArea>> getDistricts({String? query}) => getAreas(searchQuery: query, type: 'عزلة');
+  Future<List<AdminArea>> getVillages({String? query}) => getAreas(searchQuery: query, type: 'قرية');
+  Future<List<AdminArea>> getLocalities({String? query}) => getAreas(searchQuery: query, type: 'محل');
 }

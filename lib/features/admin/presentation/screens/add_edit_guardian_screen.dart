@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:guardian_app/features/admin/data/models/admin_guardian_model.dart';
 import 'package:guardian_app/features/admin/data/repositories/admin_guardian_repository.dart';
+import 'package:guardian_app/features/admin/data/repositories/admin_areas_repository.dart';
+import 'package:guardian_app/features/admin/data/models/admin_area_model.dart';
 
 class AddEditGuardianScreen extends StatefulWidget {
   final AdminGuardian? guardian;
@@ -15,6 +18,7 @@ class AddEditGuardianScreen extends StatefulWidget {
 }
 
 class _AddEditGuardianScreenState extends State<AddEditGuardianScreen> {
+  int _currentStep = 0;
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   File? _selectedImage;
@@ -32,14 +36,12 @@ class _AddEditGuardianScreenState extends State<AddEditGuardianScreen> {
   final _birthPlaceController = TextEditingController();
   final _phoneController = TextEditingController();
   final _homePhoneController = TextEditingController();
-
   DateTime? _birthDate;
 
   // 2. Identity Info
-  String _proofType = 'بطاقة شخصية'; // Default
+  String _proofType = 'بطاقة شخصية';
   final _proofNumberController = TextEditingController();
   final _issuingAuthorityController = TextEditingController();
-  
   DateTime? _issueDate;
   DateTime? _expiryDate;
 
@@ -61,14 +63,17 @@ class _AddEditGuardianScreenState extends State<AddEditGuardianScreen> {
   DateTime? _cardIssueDate;
   DateTime? _cardExpiryDate;
 
-  // 6. Geographic
-  final _mainDistrictIdController = TextEditingController(); // For simple ID input now
-
+  // 6. Geographic Area Selection
+  AdminArea? _selectedMainDistrict;
+  List<AdminArea> _selectedVillages = [];
+  List<AdminArea> _selectedLocalities = [];
+  
   // 7. Status & Notes
   String _employmentStatus = 'على رأس العمل'; // Default/Mapped
   DateTime? _stopDate;
   final _stopReasonController = TextEditingController();
   final _notesController = TextEditingController();
+
 
   @override
   void initState() {
@@ -119,14 +124,10 @@ class _AddEditGuardianScreenState extends State<AddEditGuardianScreen> {
     if (g.professionCardExpiryDate != null) _cardExpiryDate = DateTime.tryParse(g.professionCardExpiryDate!);
 
     // Geographic
-    if (g.mainDistrictId != null) _mainDistrictIdController.text = g.mainDistrictId.toString();
+    // Logic for loading areas would go here if we fetched them.
 
     // Status
     _employmentStatus = g.employmentStatus ?? 'على رأس العمل';
-    // Fix mismatch if any (English vs Arabic) - Model should hold the value used in UI or we map it.
-    // The previous mapping was for *Filters*. For stored data, it's usually Arabic in DB?
-    // Let's assume the API returns the Arabic string 'على رأس العمل'.
-    
     if (g.stopDate != null) _stopDate = DateTime.tryParse(g.stopDate!);
     _stopReasonController.text = g.stopReason ?? '';
     _notesController.text = g.notes ?? '';
@@ -134,7 +135,6 @@ class _AddEditGuardianScreenState extends State<AddEditGuardianScreen> {
 
   @override
   void dispose() {
-    // Dispose all controllers
     _serialNumberController.dispose();
     _firstNameController.dispose();
     _fatherNameController.dispose();
@@ -153,7 +153,6 @@ class _AddEditGuardianScreenState extends State<AddEditGuardianScreen> {
     _ministerialNumController.dispose();
     _licenseNumController.dispose();
     _cardNumController.dispose();
-    _mainDistrictIdController.dispose();
     _stopReasonController.dispose();
     _notesController.dispose();
     super.dispose();
@@ -171,162 +170,177 @@ class _AddEditGuardianScreenState extends State<AddEditGuardianScreen> {
   String _formatDate(DateTime dt) {
     return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
   }
+  
+  // --- Area Selection Helpers ---
+  void _openAreaSelection(String type, bool multi) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => _AreaSelectionSheet(
+        type: type,
+        multi: multi,
+        repo: context.read<AdminAreasRepository>(),
+        currentSelection: type == 'عزلة' 
+          ? (_selectedMainDistrict != null ? [_selectedMainDistrict!] : [])
+          : (type == 'قرية' ? _selectedVillages : _selectedLocalities),
+        onSelected: (List<AdminArea> items) {
+          setState(() {
+            if (type == 'عزلة') {
+              _selectedMainDistrict = items.isNotEmpty ? items.first : null;
+            } else if (type == 'قرية') {
+              _selectedVillages = items;
+            } else if (type == 'محل') {
+              _selectedLocalities = items;
+            }
+          });
+        },
+      ),
+    );
+  }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى تعبئة الحقول المطلوبة (بالأحمر)')),
-      );
-      return;
-    }
-
     setState(() => _isLoading = true);
-
     try {
-      final repo = context.read<AdminGuardianRepository>();
+        final repo = context.read<AdminGuardianRepository>();
       
-      final Map<String, String> data = {
-        'serial_number': _serialNumberController.text,
-        'first_name': _firstNameController.text,
-        'father_name': _fatherNameController.text,
-        'grandfather_name': _grandfatherNameController.text,
-        'family_name': _familyNameController.text,
-        'great_grandfather_name': _greatGrandfatherNameController.text,
-        'birth_place': _birthPlaceController.text,
-        'phone_number': _phoneController.text,
-        'home_phone': _homePhoneController.text,
-        
-        'proof_type': _proofType,
-        'proof_number': _proofNumberController.text,
-        'issuing_authority': _issuingAuthorityController.text,
-        
-        'qualification': _qualificationController.text,
-        'job': _jobController.text,
-        'workplace': _workplaceController.text,
-        'experience_notes': _experienceNotesController.text,
-        
-        'ministerial_decision_number': _ministerialNumController.text,
-        'license_number': _licenseNumController.text,
-        
-        'profession_card_number': _cardNumController.text,
-        
-        'main_district_id': _mainDistrictIdController.text,
-        
-        'employment_status': _employmentStatus,
-        'stop_reason': _stopReasonController.text,
-        'notes': _notesController.text,
-      };
+        final Map<String, dynamic> data = {
+            'serial_number': _serialNumberController.text, // Often hidden/auto
+            'first_name': _firstNameController.text,
+            'father_name': _fatherNameController.text,
+            'grandfather_name': _grandfatherNameController.text,
+            'family_name': _familyNameController.text,
+            'great_grandfather_name': _greatGrandfatherNameController.text,
+            'birth_place': _birthPlaceController.text,
+            'phone_number': _phoneController.text,
+            'home_phone': _homePhoneController.text,
+            
+            'proof_type': _proofType,
+            'proof_number': _proofNumberController.text,
+            'issuing_authority': _issuingAuthorityController.text,
+            
+            'qualification': _qualificationController.text,
+            'job': _jobController.text,
+            'workplace': _workplaceController.text,
+            'experience_notes': _experienceNotesController.text,
+            
+            'ministerial_decision_number': _ministerialNumController.text,
+            'license_number': _licenseNumController.text,
+            
+            'profession_card_number': _cardNumController.text,
+            
+            'employment_status': _employmentStatus,
+            'stop_reason': _stopReasonController.text,
+            'notes': _notesController.text,
+        };
 
-      // Helper to add dates
-      if (_birthDate != null) data['birth_date'] = _formatDate(_birthDate!);
-      if (_issueDate != null) data['issue_date'] = _formatDate(_issueDate!);
-      if (_expiryDate != null) data['expiry_date'] = _formatDate(_expiryDate!);
-      if (_ministerialDate != null) data['ministerial_decision_date'] = _formatDate(_ministerialDate!);
-      if (_licenseIssueDate != null) data['license_issue_date'] = _formatDate(_licenseIssueDate!);
-      if (_licenseExpiryDate != null) data['license_expiry_date'] = _formatDate(_licenseExpiryDate!);
-      if (_cardIssueDate != null) data['profession_card_issue_date'] = _formatDate(_cardIssueDate!);
-      if (_cardExpiryDate != null) data['profession_card_expiry_date'] = _formatDate(_cardExpiryDate!);
-      if (_stopDate != null) data['stop_date'] = _formatDate(_stopDate!);
+        // Dates
+        if (_birthDate != null) data['birth_date'] = _formatDate(_birthDate!);
+        if (_issueDate != null) data['issue_date'] = _formatDate(_issueDate!);
+        if (_expiryDate != null) data['expiry_date'] = _formatDate(_expiryDate!);
+        if (_ministerialDate != null) data['ministerial_decision_date'] = _formatDate(_ministerialDate!);
+        if (_licenseIssueDate != null) data['license_issue_date'] = _formatDate(_licenseIssueDate!);
+        if (_licenseExpiryDate != null) data['license_expiry_date'] = _formatDate(_licenseExpiryDate!);
+        if (_cardIssueDate != null) data['profession_card_issue_date'] = _formatDate(_cardIssueDate!);
+        if (_cardExpiryDate != null) data['profession_card_expiry_date'] = _formatDate(_cardExpiryDate!);
+        if (_stopDate != null) data['stop_date'] = _formatDate(_stopDate!);
 
+        // Areas
+        if (_selectedMainDistrict != null) {
+          data['main_district_id'] = _selectedMainDistrict!.id.toString();
+        }
+        if (_selectedVillages.isNotEmpty) {
+           data['village_ids'] = _selectedVillages.map((e) => e.id).toList();
+        }
+        if (_selectedLocalities.isNotEmpty) {
+           data['locality_ids'] = _selectedLocalities.map((e) => e.id).toList();
+        }
+        
+        if (widget.guardian == null) {
+            await repo.createGuardian(data, imagePath: _selectedImage?.path);
+        } else {
+            // Ensure ID is passed for update if needed contextually, usually separate arg
+            await repo.updateGuardian(widget.guardian!.id, data, imagePath: _selectedImage?.path);
+        }
 
-      if (widget.guardian == null) {
-        await repo.createGuardian(data, imagePath: _selectedImage?.path);
-      } else {
-        await repo.updateGuardian(widget.guardian!.id, data, imagePath: _selectedImage?.path);
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم الحفظ بنجاح')),
-        );
-        Navigator.pop(context, true);
-      }
+        if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم الحفظ بنجاح')));
+            Navigator.pop(context, true);
+        }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
-        );
-      }
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red));
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+        if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.guardian == null ? 'إضافة أمين جديد' : 'تعديل بيانات الأمين'),
-      ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Photo Section
-              Center(
-                child: GestureDetector(
-                  onTap: _pickImage,
-                  child: CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.grey[200],
-                    backgroundImage: _selectedImage != null
-                        ? FileImage(_selectedImage!)
-                        : (widget.guardian?.photoUrl != null
-                            ? NetworkImage(widget.guardian!.photoUrl!) as ImageProvider
-                            : null),
-                    child: (_selectedImage == null && widget.guardian?.photoUrl == null)
-                        ? const Icon(Icons.camera_alt, size: 40, color: Colors.grey)
-                        : null,
-                  ),
-                ),
+  List<Step> get _steps => [
+    Step(
+      title: const Text('البيانات الشخصية'),
+      isActive: _currentStep >= 0,
+       state: _currentStep > 0 ? StepState.complete : StepState.indexed,
+      content: Column(
+        children: [
+           GestureDetector(
+              onTap: _pickImage,
+              child: CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.grey[200],
+                backgroundImage: _selectedImage != null
+                    ? FileImage(_selectedImage!)
+                    : (widget.guardian?.photoUrl != null ? NetworkImage(widget.guardian!.photoUrl!) as ImageProvider : null),
+                child: (_selectedImage == null && widget.guardian?.photoUrl == null)
+                    ? const Icon(Icons.camera_alt, color: Colors.grey)
+                    : null,
               ),
-              const Center(child: Text('اضغط لتغيير الصورة', style: TextStyle(color: Colors.grey))),
-              const SizedBox(height: 20),
-
-              _buildSectionTitle('البيانات الشخصية'),
-              _buildTextField(_serialNumberController, 'الرقم التسلسلي *', keyboardType: TextInputType.number, required: true),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(child: _buildTextField(_firstNameController, 'الاسم الأول *', required: true)),
-                  const SizedBox(width: 8),
-                  Expanded(child: _buildTextField(_fatherNameController, 'اسم الأب *', required: true)),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                   Expanded(child: _buildTextField(_grandfatherNameController, 'اسم الجد *', required: true)),
-                   const SizedBox(width: 8),
-                   Expanded(child: _buildTextField(_familyNameController, 'اللقب *', required: true)),
-                ],
-              ),
-              const SizedBox(height: 10),
-              _buildTextField(_greatGrandfatherNameController, 'اسم الجد الكبير'),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(child: _buildDatePicker('تاريخ الميلاد *', _birthDate, (d) => setState(() => _birthDate = d))),
-                  const SizedBox(width: 8),
-                  Expanded(child: _buildTextField(_birthPlaceController, 'محال الميلاد *', required: true)),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                   Expanded(child: _buildTextField(_phoneController, 'الجوال *', keyboardType: TextInputType.phone, required: true)),
-                   const SizedBox(width: 8),
-                   Expanded(child: _buildTextField(_homePhoneController, 'هاتف المنزل', keyboardType: TextInputType.phone)),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-              _buildSectionTitle('بيانات الهوية'),
-              DropdownButtonFormField<String>(
-                initialValue: _proofType,
+            ),
+            const SizedBox(height: 10),
+            _buildTextField(_serialNumberController, 'الرقم التسلسلي', keyboardType: TextInputType.number),
+           
+            const SizedBox(height: 10),
+            TextFormField(
+               controller: _firstNameController,
+               decoration: const InputDecoration(labelText: 'الاسم الأول *', border: OutlineInputBorder()),
+               validator: (v) => v!.isEmpty ? 'مطلوب' : null,
+            ),
+            const SizedBox(height: 10),
+            TextFormField(
+               controller: _fatherNameController,
+               decoration: const InputDecoration(labelText: 'اسم الأب *', border: OutlineInputBorder()),
+               validator: (v) => v!.isEmpty ? 'مطلوب' : null,
+            ),
+             const SizedBox(height: 10),
+            TextFormField(
+               controller: _grandfatherNameController,
+               decoration: const InputDecoration(labelText: 'اسم الجد *', border: OutlineInputBorder()),
+               validator: (v) => v!.isEmpty ? 'مطلوب' : null,
+            ),
+             const SizedBox(height: 10),
+            TextFormField(
+               controller: _familyNameController,
+               decoration: const InputDecoration(labelText: 'اللقب *', border: OutlineInputBorder()),
+               validator: (v) => v!.isEmpty ? 'مطلوب' : null,
+            ),
+            const SizedBox(height: 10),
+            _buildTextField(_greatGrandfatherNameController, 'اسم الجد الكبير'),
+            const SizedBox(height: 10),
+             _buildDatePicker('تاريخ الميلاد *', _birthDate, (d) => setState(() => _birthDate = d)),
+            const SizedBox(height: 10),
+            _buildTextField(_birthPlaceController, 'محال الميلاد *', required: true),
+            const SizedBox(height: 10),
+            _buildTextField(_phoneController, 'الجوال *', keyboardType: TextInputType.phone, required: true),
+            const SizedBox(height: 10),
+            _buildTextField(_homePhoneController, 'هاتف المنزل', keyboardType: TextInputType.phone),
+        ],
+      )
+    ),
+    Step(
+      title: const Text('الهوية'),
+      isActive: _currentStep >= 1,
+      state: _currentStep > 1 ? StepState.complete : StepState.indexed,
+      content: Column(
+        children: [
+            DropdownButtonFormField<String>(
+                value: _proofType,
                 decoration: const InputDecoration(labelText: 'نوع الإثبات'),
                 items: const [
                   DropdownMenuItem(value: 'بطاقة شخصية', child: Text('بطاقة شخصية')),
@@ -335,75 +349,129 @@ class _AddEditGuardianScreenState extends State<AddEditGuardianScreen> {
                   DropdownMenuItem(value: 'بطاقة عائلية', child: Text('بطاقة عائلية')),
                 ],
                 onChanged: (val) => setState(() => _proofType = val!),
-              ),
-              const SizedBox(height: 10),
-              _buildTextField(_proofNumberController, 'رقم الإثبات *', required: true),
-              const SizedBox(height: 10),
-              _buildTextField(_issuingAuthorityController, 'جهة الإصدار *', required: true),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(child: _buildDatePicker('تاريخ الإصدار *', _issueDate, (d) => setState(() => _issueDate = d))),
-                  const SizedBox(width: 8),
-                  Expanded(child: _buildDatePicker('تاريخ الانتهاء', _expiryDate, (d) => setState(() => _expiryDate = d))),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-              _buildSectionTitle('البيانات المهنية'),
-              _buildTextField(_qualificationController, 'المؤهل العلمي *', required: true),
-              const SizedBox(height: 10),
-              _buildTextField(_jobController, 'الوظيفة *', required: true),
-              const SizedBox(height: 10),
-              _buildTextField(_workplaceController, 'جهة العمل *', required: true),
-              const SizedBox(height: 10),
-              _buildTextField(_experienceNotesController, 'ملاحظات الخبرة', maxLines: 2),
-
-              const SizedBox(height: 24),
-              _buildSectionTitle('القرار الوزاري والرخصة'),
-              _buildTextField(_ministerialNumController, 'رقم القرار الوزاري'),
-              const SizedBox(height: 10),
-              _buildDatePicker('تاريخ القرار', _ministerialDate, (d) => setState(() => _ministerialDate = d)),
-              const SizedBox(height: 10),
-              _buildTextField(_licenseNumController, 'رقم الترخيص'),
-              const SizedBox(height: 10),
-               Row(
-                children: [
-                  Expanded(child: _buildDatePicker('إصدار الترخيص', _licenseIssueDate, (d) => setState(() => _licenseIssueDate = d))),
-                  const SizedBox(width: 8),
-                  Expanded(child: _buildDatePicker('انتهاء الترخيص', _licenseExpiryDate, (d) => setState(() => _licenseExpiryDate = d))),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-              _buildSectionTitle('بطاقة المهنة'),
-               _buildTextField(_cardNumController, 'رقم البطاقة'),
-              const SizedBox(height: 10),
-               Row(
-                children: [
-                  Expanded(child: _buildDatePicker('إصدار البطاقة', _cardIssueDate, (d) => setState(() => _cardIssueDate = d))),
-                  const SizedBox(width: 8),
-                  Expanded(child: _buildDatePicker('انتهاء البطاقة', _cardExpiryDate, (d) => setState(() => _cardExpiryDate = d))),
-                ],
-              ),
-              
-              const SizedBox(height: 24),
-              _buildSectionTitle('الموقع الجغرافي'),
-              _buildTextField(_mainDistrictIdController, 'رقم العزلة (District ID)', keyboardType: TextInputType.number),
-              // Note: Ideally a Dropdown.
-              
-              const SizedBox(height: 24),
-              _buildSectionTitle('الحالة الوظيفية'),
-              DropdownButtonFormField<String>(
-                initialValue: _employmentStatus,
-                decoration: const InputDecoration(labelText: 'الحالة'),
+            ),
+            const SizedBox(height: 10),
+            _buildTextField(_proofNumberController, 'رقم الإثبات *', required: true),
+            const SizedBox(height: 10),
+            _buildTextField(_issuingAuthorityController, 'جهة الإصدار *', required: true),
+            const SizedBox(height: 10),
+             _buildDatePicker('تاريخ الإصدار', _issueDate, (d) {
+               setState(() {
+                 _issueDate = d;
+                 _expiryDate = DateTime(d.year + 10, d.month, d.day);
+               });
+             }),
+            const SizedBox(height: 10),
+             _buildDatePicker('تاريخ الانتهاء', _expiryDate, (d) => setState(() => _expiryDate = d)),
+        ],
+      )
+    ),
+    Step(
+      title: const Text('المهنة'),
+      isActive: _currentStep >= 2,
+      state: _currentStep > 2 ? StepState.complete : StepState.indexed,
+      content: Column(
+        children: [
+             _buildTextField(_qualificationController, 'المؤهل العلمي'),
+             const SizedBox(height: 10),
+             _buildTextField(_jobController, 'الوظيفة'),
+             const SizedBox(height: 10),
+             _buildTextField(_workplaceController, 'جهة العمل'),
+             const SizedBox(height: 10),
+             _buildTextField(_experienceNotesController, 'ملاحظات الخبرة', maxLines: 2),
+        ],
+      )
+    ),
+     Step(
+      title: const Text('الرخصة'),
+      isActive: _currentStep >= 3,
+      state: _currentStep > 3 ? StepState.complete : StepState.indexed,
+      content: Column(
+        children: [
+            _buildTextField(_ministerialNumController, 'رقم القرار الوزاري'),
+             const SizedBox(height: 10),
+            _buildDatePicker('تاريخ القرار', _ministerialDate, (d) => setState(() => _ministerialDate = d)),
+             const SizedBox(height: 10),
+            _buildTextField(_licenseNumController, 'رقم الترخيص'),
+             const SizedBox(height: 10),
+             _buildDatePicker('إصدار الترخيص', _licenseIssueDate, (d) {
+               setState(() {
+                 _licenseIssueDate = d;
+                 _licenseExpiryDate = DateTime(d.year + 3, d.month, d.day);
+               });
+             }),
+            const SizedBox(height: 10),
+             _buildDatePicker('انتهاء الترخيص', _licenseExpiryDate, (d) => setState(() => _licenseExpiryDate = d)),
+             const SizedBox(height: 10),
+             _buildTextField(_cardNumController, 'رقم بطاقة المهنة'),
+             const SizedBox(height: 10),
+             _buildDatePicker('إصدار البطاقة', _cardIssueDate, (d) {
+               setState(() {
+                 _cardIssueDate = d;
+                 _cardExpiryDate = DateTime(d.year + 1, d.month, d.day);
+               });
+             }),
+            const SizedBox(height: 10),
+             _buildDatePicker('انتهاء البطاقة', _cardExpiryDate, (d) => setState(() => _cardExpiryDate = d)),
+        ],
+      )
+    ),
+    Step(
+       title: const Text('المناطق'),
+       isActive: _currentStep >= 4,
+       state: _currentStep > 4 ? StepState.complete : StepState.indexed,
+       content: Column(
+         crossAxisAlignment: CrossAxisAlignment.start,
+         children: [
+            ListTile(
+              title: const Text('عزلة الاختصاص الرئيسية'),
+              subtitle: Text(_selectedMainDistrict?.name ?? 'اختر العزلة'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () => _openAreaSelection('عزلة', false),
+              tileColor: Colors.grey[100],
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+             const SizedBox(height: 10),
+             ListTile(
+              title: const Text('القرى (Multi-Select)'),
+              subtitle: Text(_selectedVillages.isEmpty 
+                  ? 'اختر القرى' 
+                  : _selectedVillages.map((e) => e.name).join(', ')),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () => _openAreaSelection('قرية', true),
+              tileColor: Colors.grey[100],
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+             const SizedBox(height: 10),
+             ListTile(
+              title: const Text('المحلات (Multi-Select)'),
+              subtitle: Text(_selectedLocalities.isEmpty 
+                  ? 'اختر المحلات' 
+                  : _selectedLocalities.map((e) => e.name).join(', ')),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () => _openAreaSelection('محل', true),
+              tileColor: Colors.grey[100],
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+         ],
+       )
+    ),
+     Step(
+      title: const Text('الحالة'),
+      isActive: _currentStep >= 5,
+      state: _currentStep > 5 ? StepState.complete : StepState.indexed,
+      content: Column(
+        children: [
+            DropdownButtonFormField<String>(
+                value: _employmentStatus,
+                decoration: const InputDecoration(labelText: 'الحالة الوظيفية'),
                 items: const [
                   DropdownMenuItem(value: 'على رأس العمل', child: Text('على رأس العمل')),
                   DropdownMenuItem(value: 'متوقف عن العمل', child: Text('متوقف عن العمل')),
                 ],
                 onChanged: (val) => setState(() => _employmentStatus = val!),
-              ),
-              if (_employmentStatus == 'متوقف عن العمل') ...[
+            ),
+             if (_employmentStatus == 'متوقف عن العمل') ...[
                 const SizedBox(height: 10),
                 _buildDatePicker('تاريخ التوقف', _stopDate, (d) => setState(() => _stopDate = d)),
                 const SizedBox(height: 10),
@@ -411,55 +479,69 @@ class _AddEditGuardianScreenState extends State<AddEditGuardianScreen> {
               ],
               const SizedBox(height: 10),
               _buildTextField(_notesController, 'ملاحظات عامة', maxLines: 3),
+        ],
+      )
+    ),
+  ];
 
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _save,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                ),
-                child: _isLoading 
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('حفظ البيانات', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.guardian == null ? 'إضافة أمين' : 'تعديل أمين')),
+      body: Form(
+        key: _formKey,
+        child: Stepper(
+          currentStep: _currentStep,
+          onStepTapped: (index) => setState(() => _currentStep = index),
+          onStepContinue: () {
+             if (_currentStep < _steps.length - 1) {
+               setState(() => _currentStep += 1);
+             } else {
+               _save();
+             }
+          },
+          onStepCancel: () {
+             if (_currentStep > 0) {
+              setState(() => _currentStep -= 1);
+            }
+          },
+          controlsBuilder: (ctx, details) {
+            return Padding(
+              padding: const EdgeInsets.only(top: 20.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: details.onStepContinue,
+                      child: Text(_currentStep == _steps.length - 1 ? 'حفظ البيانات' : 'التالي'),
+                    ),
+                  ),
+                  if (_currentStep > 0) ...[
+                     const SizedBox(width: 8),
+                     Expanded(
+                       child: OutlinedButton(
+                         onPressed: details.onStepCancel, 
+                         child: const Text('السابق'),
+                       ),
+                     )
+                  ]
+                ],
               ),
-              const SizedBox(height: 32),
-            ],
-          ),
+            );
+          },
+          steps: _steps,
         ),
       ),
     );
   }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
-          const Divider(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTextField(TextEditingController controller, String label, {
-    TextInputType? keyboardType, 
-    bool required = false,
-    int maxLines = 1,
-  }) {
+  
+  Widget _buildTextField(TextEditingController c, String label, {TextInputType? keyboardType, bool required = false, int maxLines = 1}) {
     return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      ),
+      controller: c,
+      decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
       keyboardType: keyboardType,
       maxLines: maxLines,
-      validator: required ? (val) => val == null || val.isEmpty ? 'مطلوب' : null : null,
+      validator: required ? (v) => v == null || v.isEmpty ? 'مطلوب' : null : null,
     );
   }
 
@@ -467,25 +549,132 @@ class _AddEditGuardianScreenState extends State<AddEditGuardianScreen> {
     return InkWell(
       onTap: () async {
         final d = await showDatePicker(
-          context: context,
-          initialDate: selectedDate ?? DateTime.now(),
-          firstDate: DateTime(1900),
-          lastDate: DateTime(2100),
+          context: context, 
+          initialDate: selectedDate ?? DateTime.now(), 
+          firstDate: DateTime(1900), 
+          lastDate: DateTime(2100)
         );
         if (d != null) onSelect(d);
       },
       child: InputDecorator(
         decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          suffixIcon: const Icon(Icons.calendar_today, size: 20),
+           labelText: label,
+           border: const OutlineInputBorder(),
+           suffixIcon: const Icon(Icons.calendar_today)
         ),
-        child: Text(
-          selectedDate != null ? _formatDate(selectedDate) : '',
-          style: const TextStyle(fontSize: 16),
-        ),
+        child: Text(selectedDate != null ? _formatDate(selectedDate) : ''),
       ),
     );
   }
+}
+
+class _AreaSelectionSheet extends StatefulWidget {
+  final String type;
+  final bool multi;
+  final AdminAreasRepository repo;
+  final List<AdminArea> currentSelection;
+  final Function(List<AdminArea>) onSelected;
+
+  const _AreaSelectionSheet({
+      required this.type, 
+      required this.multi, 
+      required this.repo, 
+      required this.currentSelection, 
+      required this.onSelected
+  });
+
+  @override
+  State<_AreaSelectionSheet> createState() => _AreaSelectionSheetState();
+}
+
+class _AreaSelectionSheetState extends State<_AreaSelectionSheet> {
+    List<AdminArea> _items = [];
+    List<AdminArea> _selected = [];
+    bool _loading = false;
+    final _searchCtrl = TextEditingController();
+    Timer? _debounce;
+
+    @override
+    void initState() {
+      super.initState();
+      _selected = List.from(widget.currentSelection);
+      _fetch();
+    }
+
+    void _fetch({String? query}) async {
+        setState(() => _loading = true);
+        try {
+            final items = await widget.repo.getAreas(type: widget.type, searchQuery: query);
+            if (mounted) setState(() => _items = items);
+        } catch (e) {
+           // Handle error
+        } finally {
+            if (mounted) setState(() => _loading = false);
+        }
+    }
+
+    void _onSearch(String val) {
+        if (_debounce?.isActive ?? false) _debounce!.cancel();
+        _debounce = Timer(const Duration(milliseconds: 500), () => _fetch(query: val));
+    }
+
+    @override
+    Widget build(BuildContext context) {
+       return Container(
+          height: MediaQuery.of(context).size.height * 0.8,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+               Text('اختر ${widget.type}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+               const SizedBox(height: 10),
+               TextField(
+                 controller: _searchCtrl,
+                 decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'بحث...'),
+                 onChanged: _onSearch,
+               ),
+               const SizedBox(height: 10),
+               Expanded(
+                 child: _loading 
+                   ? const Center(child: CircularProgressIndicator())
+                   : ListView.builder(
+                       itemCount: _items.length,
+                       itemBuilder: (ctx, i) {
+                           final item = _items[i];
+                           final isSelected = _selected.any((s) => s.id == item.id);
+                           return ListTile(
+                             title: Text(item.name),
+                             trailing: isSelected 
+                               ? const Icon(Icons.check, color: Colors.green)
+                               : null,
+                             onTap: () {
+                                 setState(() {
+                                    if (widget.multi) {
+                                       if (isSelected) {
+                                          _selected.removeWhere((s) => s.id == item.id);
+                                       } else {
+                                          _selected.add(item);
+                                       }
+                                    } else {
+                                        _selected = [item];
+                                        widget.onSelected(_selected);
+                                        Navigator.pop(context);
+                                    }
+                                 });
+                             },
+                           );
+                       },
+                   ),
+               ),
+               if (widget.multi)
+                 ElevatedButton(
+                   onPressed: () {
+                      widget.onSelected(_selected);
+                      Navigator.pop(context);
+                   },
+                   child: const Text('تأكيد الاختيار'),
+                 )
+            ],
+          ),
+       );
+    }
 }
