@@ -63,40 +63,6 @@ class _GuardiansListTabState extends State<GuardiansListTab> with SingleTickerPr
     super.dispose();
   }
 
-      ],
-    );
-  }
-
-  // Floating Action Button needed?
-  // Since this is a tab inside a scaffold, we can return the body or we might need to modify the parent screen to show FAB.
-  // Instead of FAB, we can add a 'Add' button in the header or use an Overlay entry or just modify the parent `AdminGuardiansManagementScreen`.
-  // However, `AdminGuardiansManagementScreen` uses DefaultTabController.
-  // Let's add the FAB inside the Stack or Scaffold.
-  // Actually, we are returning a Column. We can use a Stack or wrap content in Scaffold (nested) or just put a button in the UI.
-  // A clean way is adding a button in search row or a floating button.
-  
-  // Let's add a '+' button next to Query field or as a FAB in `AdminGuardiansManagementScreen`.
-  // But since I am editing `GuardiansListTab`, I can wrap the Column in a generic Widget that has a Stack for FAB if needed, OR relies on the parent.
-  // Let's modify the build method to return Expanded + Stack or similar.
-  // Simplest: Add an IconButton in the Search Row.
-
-  // Let's modify the Build Method to use Stack for FAB
-  /* 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToEdit(null),
-        backgroundColor: Theme.of(context).primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      body: Column(...)
-    );
-  }
-  */
-  // But wait, it's a tab, nested Scaffold works.
-
   Future<void> _navigateToEdit(AdminGuardian? guardian) async {
      final result = await Navigator.push(
        context,
@@ -118,135 +84,135 @@ class _GuardiansListTabState extends State<GuardiansListTab> with SingleTickerPr
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: Column(
-      children: [
-        // Search Bar
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: _onSearchChanged,
-                  decoration: InputDecoration(
-                    hintText: 'بحث عن أمين (الاسم، الرقم...)',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+        children: [
+          // Search Bar
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: 'بحث عن أمين (الاسم، الرقم...)',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
 
-        // Tabs
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
+          // Tabs
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TabBar(
+              controller: _tabController,
+              labelColor: Theme.of(context).primaryColor,
+              unselectedLabelColor: Colors.grey,
+              indicatorColor: Theme.of(context).primaryColor,
+              indicatorSize: TabBarIndicatorSize.label,
+              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Tajawal'),
+              tabs: const [
+                Tab(text: 'الكل'),
+                Tab(text: 'على رأس العمل'),
+                Tab(text: 'متوقف'),
+              ],
+            ),
           ),
-          child: TabBar(
-            controller: _tabController,
-            labelColor: Theme.of(context).primaryColor,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: Theme.of(context).primaryColor,
-            indicatorSize: TabBarIndicatorSize.label,
-            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Tajawal'),
-            tabs: const [
-              Tab(text: 'الكل'),
-              Tab(text: 'على رأس العمل'),
-              Tab(text: 'متوقف'),
-            ],
-          ),
-        ),
 
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-        // List
-        Expanded(
-          child: Consumer<AdminGuardiansProvider>(
-            builder: (context, provider, child) {
-              if (provider.isLoading && provider.guardians.isEmpty) {
-                return const Center(child: CircularProgressIndicator());
-              }
+          // List
+          Expanded(
+            child: Consumer<AdminGuardiansProvider>(
+              builder: (context, provider, child) {
+                if (provider.isLoading && provider.guardians.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              if (provider.error != null) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
-                      const SizedBox(height: 16),
-                      Text(provider.error!, textAlign: TextAlign.center),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => _fetchData(),
-                        child: const Text('إعادة المحاولة'),
-                      ),
-                    ],
-                  ),
-                );
-              }
+                if (provider.error != null) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+                        const SizedBox(height: 16),
+                        Text(provider.error!, textAlign: TextAlign.center),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => _fetchData(),
+                          child: const Text('إعادة المحاولة'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
 
-              if (provider.guardians.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.people_outline, size: 60, color: Colors.grey[300]),
-                      const SizedBox(height: 16),
-                      Text(
-                        'لا يوجد أمناء',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
-                      ),
-                    ],
-                  ),
-                );
-              }
+                if (provider.guardians.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.people_outline, size: 60, color: Colors.grey[300]),
+                        const SizedBox(height: 16),
+                        Text(
+                          'لا يوجد أمناء',
+                          style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  );
+                }
 
-              return NotificationListener<ScrollNotification>(
-                onNotification: (ScrollNotification scrollInfo) {
-                  if (!provider.isLoading &&
-                      provider.hasMore &&
-                      scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
-                    provider.fetchGuardians();
-                  }
-                  return false;
-                },
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  itemCount: provider.guardians.length + (provider.hasMore ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index == provider.guardians.length) {
-                      return const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      );
+                return NotificationListener<ScrollNotification>(
+                  onNotification: (ScrollNotification scrollInfo) {
+                    if (!provider.isLoading &&
+                        provider.hasMore &&
+                        scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
+                      provider.fetchGuardians();
                     }
-
-                    final guardian = provider.guardians[index];
-                    return _buildGuardianCard(context, guardian);
+                    return false;
                   },
-                ),
-              );
-            },
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    itemCount: provider.guardians.length + (provider.hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == provider.guardians.length) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+
+                      final guardian = provider.guardians[index];
+                      return _buildGuardianCard(context, guardian);
+                    },
+                  ),
+                );
+              },
+            ),
           ),
-        ),
-      ],
+        ],
       ),
     );
   }

@@ -14,6 +14,7 @@ class AdminGuardian {
   final String? firstName;
   final String? fatherName;
   final String? grandfatherName;
+  final String? familyName;
   // Basic Extended
   final String? greatGrandfatherName;
   final String? birthDate;
