@@ -17,10 +17,10 @@ class AdminAreasRepository {
       'page': page.toString(),
     };
     if (searchQuery != null && searchQuery.isNotEmpty) {
-      queryParams['search'] = searchQuery;
+      queryParams['filter[name]'] = searchQuery;
     }
 
-    final uri = Uri.parse('$baseUrl/api/admin/areas').replace(queryParameters: queryParams);
+    final uri = Uri.parse('$baseUrl/geographic-areas').replace(queryParameters: queryParams);
 
     try {
       final response = await http.get(

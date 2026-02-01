@@ -19,14 +19,22 @@ class AdminGuardianRepository {
 
     final queryParams = {
       'page': page.toString(),
-      'employment_status': status,
     };
     
+    if (status != 'all') {
+      // Map English status to Arabic DB values
+      final mappedStatus = status == 'active' ? 'على رأس العمل' : 
+                          (status == 'stopped' ? 'متوقف عن العمل' : status);
+      queryParams['filter[employment_status]'] = mappedStatus;
+    }
+    
     if (searchQuery != null && searchQuery.isNotEmpty) {
-      queryParams['search'] = searchQuery;
+      // For now, search by serial number or use a specific filter if configured
+      // Spatie Exact Filter on serial_number
+      queryParams['filter[serial_number]'] = searchQuery;
     }
 
-    final uri = Uri.parse('${ApiConstants.baseUrl}/admin/guardians')
+    final uri = Uri.parse('${ApiConstants.baseUrl}/guardians')
         .replace(queryParameters: queryParams);
 
     final response = await http.get(
@@ -43,6 +51,74 @@ class AdminGuardianRepository {
       return data.map((e) => AdminGuardian.fromJson(e)).toList();
     } else {
       throw Exception('Failed to load guardians: ${response.statusCode}');
+    }
+  }
+  Future<void> createGuardian(Map<String, String> data, {String? imagePath}) async {
+    final token = await _authRepository.getToken();
+    final uri = Uri.parse('${ApiConstants.baseUrl}/guardians');
+    
+    final request = http.MultipartRequest('POST', uri);
+    request.headers.addAll({
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    });
+    
+    request.fields.addAll(data);
+    
+    if (imagePath != null) {
+      request.files.add(await http.MultipartFile.fromPath('personal_photo', imagePath));
+    }
+    
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw Exception('Failed to create guardian: ${response.body}');
+    }
+  }
+
+  Future<void> updateGuardian(int id, Map<String, String> data, {String? imagePath}) async {
+    final token = await _authRepository.getToken();
+    final uri = Uri.parse('${ApiConstants.baseUrl}/guardians/$id');
+    
+    // For update (PUT/PATCH) with files, often need POST with _method=PUT or specific handling
+    // Laravel/Spatie usually handles standard POST or PUT. PHP sometimes has issues with PUT + Multipart.
+    // Safe bet: POST with _method = PUT
+    final request = http.MultipartRequest('POST', uri);
+    request.headers.addAll({
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    });
+    
+    request.fields.addAll(data);
+    request.fields['_method'] = 'PUT'; // Laravel trick for PUT multipart
+    
+    if (imagePath != null) {
+      request.files.add(await http.MultipartFile.fromPath('personal_photo', imagePath));
+    }
+    
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update guardian: ${response.body}');
+    }
+  }
+
+  Future<void> deleteGuardian(int id) async {
+    final token = await _authRepository.getToken();
+    final uri = Uri.parse('${ApiConstants.baseUrl}/guardians/$id');
+
+    final response = await http.delete(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Failed to delete guardian');
     }
   }
 }

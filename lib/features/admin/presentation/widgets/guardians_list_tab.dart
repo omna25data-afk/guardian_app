@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:guardian_app/features/admin/data/models/admin_guardian_model.dart';
 import 'package:guardian_app/providers/admin_guardians_provider.dart';
+import 'package:guardian_app/features/admin/presentation/screens/add_edit_guardian_screen.dart';
 import 'dart:async';
 
 class GuardiansListTab extends StatefulWidget {
@@ -62,27 +63,85 @@ class _GuardiansListTabState extends State<GuardiansListTab> with SingleTickerPr
     super.dispose();
   }
 
+      ],
+    );
+  }
+
+  // Floating Action Button needed?
+  // Since this is a tab inside a scaffold, we can return the body or we might need to modify the parent screen to show FAB.
+  // Instead of FAB, we can add a 'Add' button in the header or use an Overlay entry or just modify the parent `AdminGuardiansManagementScreen`.
+  // However, `AdminGuardiansManagementScreen` uses DefaultTabController.
+  // Let's add the FAB inside the Stack or Scaffold.
+  // Actually, we are returning a Column. We can use a Stack or wrap content in Scaffold (nested) or just put a button in the UI.
+  // A clean way is adding a button in search row or a floating button.
+  
+  // Let's add a '+' button next to Query field or as a FAB in `AdminGuardiansManagementScreen`.
+  // But since I am editing `GuardiansListTab`, I can wrap the Column in a generic Widget that has a Stack for FAB if needed, OR relies on the parent.
+  // Let's modify the build method to return Expanded + Stack or similar.
+  // Simplest: Add an IconButton in the Search Row.
+
+  // Let's modify the Build Method to use Stack for FAB
+  /* 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _navigateToEdit(null),
+        backgroundColor: Theme.of(context).primaryColor,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      body: Column(...)
+    );
+  }
+  */
+  // But wait, it's a tab, nested Scaffold works.
+
+  Future<void> _navigateToEdit(AdminGuardian? guardian) async {
+     final result = await Navigator.push(
+       context,
+       MaterialPageRoute(builder: (_) => AddEditGuardianScreen(guardian: guardian)),
+     );
+     
+     if (result == true) {
+       _fetchData();
+     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _navigateToEdit(null),
+        backgroundColor: Theme.of(context).primaryColor,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      body: Column(
       children: [
         // Search Bar
         Padding(
           padding: const EdgeInsets.all(16.0),
-          child: TextField(
-            controller: _searchController,
-            onChanged: _onSearchChanged,
-            decoration: InputDecoration(
-              hintText: 'بحث عن أمين (الاسم، الرقم...)',
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                  decoration: InputDecoration(
+                    hintText: 'بحث عن أمين (الاسم، الرقم...)',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
               ),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
+            ],
           ),
         ),
 
@@ -188,6 +247,7 @@ class _GuardiansListTabState extends State<GuardiansListTab> with SingleTickerPr
           ),
         ),
       ],
+      ),
     );
   }
 
@@ -208,9 +268,7 @@ class _GuardiansListTabState extends State<GuardiansListTab> with SingleTickerPr
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
-            // Navigate to detail view if needed
-          },
+          onTap: () => _navigateToEdit(guardian),
           borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.all(12),

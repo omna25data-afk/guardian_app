@@ -16,12 +16,12 @@ class AdminAssignmentsRepository {
     String? type,
   }) async {
     final token = await _storage.read(key: 'auth_token');
-    
+    // Construct query parameters
     Map<String, String> queryParams = {
       'page': page.toString(),
     };
     if (searchQuery != null && searchQuery.isNotEmpty) {
-      queryParams['search'] = searchQuery;
+      queryParams['filter[serial_number]'] = searchQuery; // Assignment likely has serial number or use id
     }
     if (status != null && status != 'all') {
       queryParams['status'] = status;
@@ -30,7 +30,7 @@ class AdminAssignmentsRepository {
       queryParams['type'] = type;
     }
 
-    final uri = Uri.parse('$baseUrl/api/admin/assignments').replace(queryParameters: queryParams);
+    final uri = Uri.parse('$baseUrl/guardian-assignments').replace(queryParameters: queryParams);
 
     try {
       final response = await http.get(

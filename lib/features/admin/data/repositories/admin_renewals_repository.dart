@@ -13,14 +13,14 @@ class AdminRenewalsRepository {
     int page = 1,
     String? searchQuery,
   }) async {
-    return _fetchRenewals('/admin/licenses', page, searchQuery);
+    return _fetchRenewals('/license-managements', page, searchQuery);
   }
 
   Future<List<AdminRenewal>> getCards({
     int page = 1,
     String? searchQuery,
   }) async {
-    return _fetchRenewals('/admin/cards', page, searchQuery);
+    return _fetchRenewals('/electronic-card-renewals', page, searchQuery);
   }
 
   Future<List<AdminRenewal>> _fetchRenewals(String endpoint, int page, String? searchQuery) async {
@@ -32,7 +32,8 @@ class AdminRenewalsRepository {
     };
     
     if (searchQuery != null && searchQuery.isNotEmpty) {
-      queryParams['search'] = searchQuery;
+      // Basic filter by ID for now as Spatie exact text search needs setup
+      queryParams['filter[id]'] = searchQuery;
     }
 
     final uri = Uri.parse('${ApiConstants.baseUrl}$endpoint')
