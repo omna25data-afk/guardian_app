@@ -1,7 +1,16 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+             DropdownButtonFormField<String>(
+                initialValue: _proofType,
+                decoration: InputDecoration(
+                  labelText: 'نوع الإثبات',
+                  prefixIcon: const Icon(Icons.assignment_ind),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                ),
+                items: const [
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:guardian_app/features/admin/data/models/admin_guardian_model.dart';
@@ -414,7 +423,7 @@ class _AddEditGuardianScreenState extends State<AddEditGuardianScreen> {
                ),
              ),
              DropdownButtonFormField<String>(
-                value: _proofType,
+                initialValue: _proofType,
                 decoration: InputDecoration(
                   labelText: 'نوع الإثبات',
                   prefixIcon: const Icon(Icons.assignment_ind),
@@ -556,7 +565,7 @@ class _AddEditGuardianScreenState extends State<AddEditGuardianScreen> {
       content: Column(
         children: [
             DropdownButtonFormField<String>(
-                value: _employmentStatus,
+                initialValue: _employmentStatus,
                 decoration: InputDecoration(
                   labelText: 'الحالة الوظيفية',
                   prefixIcon: Icon(Icons.info_outline, color: _employmentStatus == 'على رأس العمل' ? Colors.green : Colors.red),
@@ -651,7 +660,7 @@ class _AddEditGuardianScreenState extends State<AddEditGuardianScreen> {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: details.onStepContinue,
+                        onPressed: _isLoading ? null : details.onStepContinue,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Theme.of(context).primaryColor,
                           foregroundColor: Colors.white,
@@ -659,7 +668,9 @@ class _AddEditGuardianScreenState extends State<AddEditGuardianScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           elevation: 2,
                         ),
-                        child: Text(_currentStep == _steps.length - 1 ? 'حفظ البيانات' : 'التالي', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Tajawal')),
+                        child: _isLoading 
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : Text(_currentStep == _steps.length - 1 ? 'حفظ البيانات' : 'التالي', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Tajawal')),
                       ),
                     ),
                     if (_currentStep > 0) ...[
