@@ -87,11 +87,25 @@ class _GuardiansListTabState extends State<GuardiansListTab> with SingleTickerPr
              padding: EdgeInsets.all(16.0),
              child: Text('فرز القائمة', style: TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold, fontSize: 18)),
            ),
-           ListTile(title: const Text('الأحدث إضافة', style: TextStyle(fontFamily: 'Tajawal')), leading: const Icon(Icons.calendar_today), onTap: () => Navigator.pop(ctx)),
-           ListTile(title: const Text('الأقدم إضافة', style: TextStyle(fontFamily: 'Tajawal')), leading: const Icon(Icons.history), onTap: () => Navigator.pop(ctx)),
-           ListTile(title: const Text('الاسم (أ-ي)', style: TextStyle(fontFamily: 'Tajawal')), leading: const Icon(Icons.sort_by_alpha), onTap: () => Navigator.pop(ctx)),
+           _buildSortOption(ctx, 'الأحدث إضافة', 'date_desc', Icons.calendar_today),
+           _buildSortOption(ctx, 'الأقدم إضافة', 'date_asc', Icons.history),
+           _buildSortOption(ctx, 'الاسم (أ-ي)', 'name_asc', Icons.sort_by_alpha),
         ],
       ),
+    );
+  }
+
+  Widget _buildSortOption(BuildContext ctx, String label, String value, IconData icon) {
+    bool isSelected = _sortOption == value;
+    return ListTile(
+      title: Text(label, style: TextStyle(fontFamily: 'Tajawal', fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? Theme.of(context).primaryColor : Colors.black87)),
+      leading: Icon(icon, color: isSelected ? Theme.of(context).primaryColor : Colors.grey),
+      trailing: isSelected ? Icon(Icons.check, color: Theme.of(context).primaryColor) : null,
+      onTap: () {
+        setState(() => _sortOption = value);
+        // Here you would typically call _fetchData() with the new sort option
+        Navigator.pop(ctx);
+      },
     );
   }
 
@@ -117,7 +131,7 @@ class _GuardiansListTabState extends State<GuardiansListTab> with SingleTickerPr
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
                     ),
                     child: TextField(
                       controller: _searchController,
@@ -147,7 +161,7 @@ class _GuardiansListTabState extends State<GuardiansListTab> with SingleTickerPr
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(25),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 5)],
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 5)],
             ),
             child: TabBar(
               controller: _tabController,
@@ -204,7 +218,7 @@ class _GuardiansListTabState extends State<GuardiansListTab> with SingleTickerPr
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 5)],
       ),
       child: IconButton(
         icon: Icon(icon, color: color),
@@ -238,7 +252,7 @@ class _GuardiansListTabState extends State<GuardiansListTab> with SingleTickerPr
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -257,7 +271,7 @@ class _GuardiansListTabState extends State<GuardiansListTab> with SingleTickerPr
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isActive ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2), 
+                          color: isActive ? Colors.green.withValues(alpha: 0.2) : Colors.red.withValues(alpha: 0.2), 
                           width: 3
                         ),
                       ),
@@ -288,7 +302,7 @@ class _GuardiansListTabState extends State<GuardiansListTab> with SingleTickerPr
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: Colors.blue.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text('#م ${guardian.serialNumber}', style: const TextStyle(fontFamily: 'Tajawal', color: Colors.blue, fontSize: 11, fontWeight: FontWeight.bold)),
@@ -344,7 +358,7 @@ class _GuardiansListTabState extends State<GuardiansListTab> with SingleTickerPr
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                             color: Colors.blue.withOpacity(0.1),
+                             color: Colors.blue.withValues(alpha: 0.1),
                              borderRadius: BorderRadius.circular(8)
                           ),
                           child: const Row(
@@ -364,7 +378,7 @@ class _GuardiansListTabState extends State<GuardiansListTab> with SingleTickerPr
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                             color: Colors.green.withOpacity(0.1),
+                             color: Colors.green.withValues(alpha: 0.1),
                              borderRadius: BorderRadius.circular(8)
                           ),
                           child: const Row(
