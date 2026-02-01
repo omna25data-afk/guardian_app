@@ -1,16 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-             DropdownButtonFormField<String>(
-                initialValue: _proofType,
-                decoration: InputDecoration(
-                  labelText: 'نوع الإثبات',
-                  prefixIcon: const Icon(Icons.assignment_ind),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                ),
-                items: const [
+
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:guardian_app/features/admin/data/models/admin_guardian_model.dart';
