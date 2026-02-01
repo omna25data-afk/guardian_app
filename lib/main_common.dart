@@ -119,9 +119,8 @@ class MyApp extends StatelessWidget {
             secondary: const Color(0xFF004d00),
           ),
           scaffoldBackgroundColor: Colors.grey[50],
-          textTheme: GoogleFonts.tajawalTextTheme(textTheme).copyWith(
-            bodyMedium: GoogleFonts.tajawal(textStyle: textTheme.bodyMedium),
-          ),
+          fontFamily: GoogleFonts.tajawal().fontFamily,
+          textTheme: GoogleFonts.tajawalTextTheme(textTheme),
           appBarTheme: const AppBarTheme(
             backgroundColor: Color(0xFF006400),
             foregroundColor: Colors.white,
